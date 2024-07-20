@@ -1,21 +1,20 @@
 #!/bin/bash
 
-CWD=`pwd`
+CWD=$(pwd)
 tmpdir="$CWD/tmp/tmp.$(($RANDOM * 19318203981230 + 40))"
 version=$(date +"%Y.%m.%d")
-filename="$CWD/archive/folder.view-$version.txz"
-dayversion=$(ls $CWD/archive/folder.view-$version*.txz 2>/dev/null | wc -l)
+filename="$CWD/archive/docker.versions-$version.txz"
+dayversion=$(ls $CWD/archive/docker.versions-$version*.txz 2>/dev/null | wc -l)
 
-if [ $dayversion -gt 0 ]
-then
-    filename=$CWD/archive/folder.view-$version.$dayversion.txz
+if [ $dayversion -gt 0 ]; then
+    filename=$CWD/archive/docker.versions-$version.$dayversion.txz
 fi
 
 mkdir -p $tmpdir
 chmod 0755 -R .
 
-cd "$CWD/src/folder.view"
-cp --parents -f $(find . -type f ! \( -iname "pkg_build.sh" -o -iname "sftp-config.json"  \) ) $tmpdir/
+cd "$CWD/src/docker.versions"
+cp --parents -f $(find . -type f ! \( -iname "pkg_build.sh" -o -iname "sftp-config.json" \)) $tmpdir/
 
 cd $tmpdir
 makepkg -l y -c y $filename
