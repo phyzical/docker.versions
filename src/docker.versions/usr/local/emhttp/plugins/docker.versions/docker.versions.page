@@ -1,0 +1,8 @@
+Menu="Docker"
+Icon="server"
+---
+
+<? $type = 'docker' ?>
+<? require_once('/usr/local/emhttp/plugins/docker.versions/scripts/docker.php') ?>
+
+<script defer src="<?autov('/plugins/docker.versions/scripts/docker.js')?>"></script>

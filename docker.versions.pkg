@@ -10,7 +10,7 @@
 <!ENTITY md5 "7a3f59a4ddaa88d93613a5d020b2d4be">
 ]>
 
-<PLUGIN name="&name;" author="&author;" version="&version;" launch="&launch;" pluginURL="&pluginURL;" icon="folder-open-o" support="https://forums.unraid.net/topic/142782-plugin-folderview/" min="6.12.3">
+<PLUGIN name="&name;" author="&author;" version="&version;" launch="&launch;" pluginURL="&pluginURL;" icon="folder-open-o" min="6.12.3">
     <CHANGES>
 ###2024.06.20
 - Initial Release
