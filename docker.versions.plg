@@ -6,8 +6,8 @@
 <!ENTITY launch "Settings/DockerVersions">
 <!ENTITY plugdir "/usr/local/emhttp/plugins/&name;">
 <!ENTITY pluginURL "https://raw.githubusercontent.com/&github;/main/&name;.plg">
-<!ENTITY version "2024.06.20">
-<!ENTITY md5 "7a3f59a4ddaa88d93613a5d020b2d4be">
+<!ENTITY version "2024.07.21">
+<!ENTITY md5 "600e89430fd30417b6771b51f103245d">
 ]>
 
 <PLUGIN name="&name;" author="&author;" version="&version;" launch="&launch;" pluginURL="&pluginURL;" icon="folder-open-o" min="6.12.3">
@@ -18,7 +18,7 @@
 
     <!-- New source file -->
     <FILE Name="/boot/config/plugins/&name;/&name;-&version;.txz" Run="upgradepkg --install-new">
-        <URL>https://raw.github.com/&github;/main/archive/&name;-&version;.txz</URL>
+        <URL>https://raw.github.com/&github;/ma/archive/&name;-&version;.txz</URL>
         <MD5>&md5;</MD5>
     </FILE>
 
