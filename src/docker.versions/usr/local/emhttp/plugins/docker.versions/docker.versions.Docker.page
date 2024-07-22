@@ -3,6 +3,6 @@ Icon="server"
 ---
 
 <? $type = 'docker' ?>
-<? require_once('/usr/local/emhttp/plugins/docker.versions/scripts/docker.php') ?>
+<? require_once('/usr/local/emhttp/plugins/docker.versions/server/docker.php') ?>
 
 <script defer src="<?autov('/plugins/docker.versions/scripts/docker.js')?>"></script>
