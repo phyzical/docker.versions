@@ -22,4 +22,8 @@ cd - || exit
 
 rm -rf "$tmpdir"
 
+sed -i '' 's/<!ENTITY version ".*">/<!ENTITY version "'"$version"'">/' docker.versions.plg
+md5hash=$(md5 -q "$filename")
+sed -i '' 's/<!ENTITY md5 ".*">/<!ENTITY md5 "'"$md5hash"'">/' docker.versions.plg
+
 echo "MD5: $(md5sum "$filename")"
