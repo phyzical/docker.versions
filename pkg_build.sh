@@ -12,7 +12,7 @@ if [ "$dayversion" -gt 0 ]; then
 fi
 mkdir -p "$tmpdir"
 
-rsync -av --progress . "$tmpdir" --exclude .git --exclude tmp --exclude .env --exclude archive
+rsync -av --progress ./src/docker.versions/ "$tmpdir" --exclude .git --exclude tmp --exclude .env --exclude archive
 
 cd "$tmpdir" || exit
 
