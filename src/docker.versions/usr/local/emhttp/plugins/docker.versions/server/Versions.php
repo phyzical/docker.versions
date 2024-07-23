@@ -6,7 +6,7 @@ require_once ("$documentRoot/plugins/dynamix.docker.manager/include/DockerClient
 require_once ("$documentRoot/webGui/include/Helpers.php");
 
 
-function readInfo(string $type): array
+function getContainers(string $type): array
 {
     $info = [];
     global $dockerManPaths;
