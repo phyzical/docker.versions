@@ -27,3 +27,4 @@ md5hash=$(md5 -q "$filename")
 sed -i '' 's/<!ENTITY md5 ".*">/<!ENTITY md5 "'"$md5hash"'">/' docker.versions.plg
 
 echo "MD5: $(md5sum "$filename")"
+echo "once pushed install via https://raw.githubusercontent.com/phyzical/docker.versions/main/docker.versions.plg"
