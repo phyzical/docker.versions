@@ -2,7 +2,7 @@
 
 CWD=$(pwd)
 tmpdir="$CWD/tmp/tmp.$(($RANDOM * 19318203981230 + 40))"
-version=$(date +"%Y.%m.%d")
+version=$(date +"%Y.%m.%d.%H:%M:%S")
 filename="$CWD/archive/docker.versions-$version.txz"
 rm "$filename"
 dayversion=$(ls "$CWD"/archive/docker.versions-"$version"*.txz 2>/dev/null | wc -l)

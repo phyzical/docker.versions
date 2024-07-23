@@ -6,7 +6,7 @@
 <!ENTITY launch "Settings/DockerVersions">
 <!ENTITY plugdir "/usr/local/emhttp/plugins/&name;">
 <!ENTITY pluginURL "https://raw.githubusercontent.com/&github;/main/&name;.plg">
-<!ENTITY version "2024.07.23">
+<!ENTITY version "2024.07.23.18:04:08">
 <!ENTITY md5 "a72298239a2a6cc6b98aed98c7230647">
 ]>
 
