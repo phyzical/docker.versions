@@ -12,7 +12,8 @@ $(document).ready(function () {
 })
 
 function showChangeLog(container) {
-    var title = _('Updating the container') + ': ' + container;
-    var cmd = '/plugins/docker.versions/server/Versions.php?ct[]=' + encodeURIComponent(container);
+    var title = _('Changelog for ') + container;
+    var cmd = '/plugins/docker.versions/server/GetDockerChangelog.php?cts[]=' + encodeURIComponent(container);
     popupWithIframe(title, cmd, false, 'loadlist');
 }
+
