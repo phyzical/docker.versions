@@ -17,13 +17,20 @@ $dockerImages = $dockerClient->getDockerImages();
 
 foreach ($containers as $container) {
     $repositorySource = str_replace(".git", "", $container["Labels"]["org.opencontainers.image.source"] ?? "");
-    $currentImageSourceTag = $container["Labels"]["org.opencontainers.image.version"] ?? "org.opencontainers.image.version label missing";
-    $currentImageCreatedAt = (new DateTime($container["Labels"]["org.opencontainers.image.created"]))->format('Y-m-d H:i:s') ?? "org.opencontainers.image.created label missing";
-
+    $currentImageSourceTag = $container["Labels"]["org.opencontainers.image.version"];
+    $currentImageCreatedAt = $container["Labels"]["org.opencontainers.image.created"];
+    $currentImage = $container["Image"];
     $releases = [];
     if (!$repositorySource) {
-        echo "<h3>Error no org.opencontainers.image.source label</h3>";
-    } else if (str_contains($repositorySource, 'github')) {
+        echo "<h3>Warning no org.opencontainers.image.source label</h3>";
+        echo "<div>Please request that org.opencontainers.image.source is added by image creator for the best experience.</div>";
+        $repoGuess = implode('/', array_reverse(array_slice(array_reverse(explode('/', explode(':', $currentImage)[0])), 0, 2)));
+        $repositorySource = "https://github.com/{$repoGuess}";
+        echo "<div>Falling back to a guess based on container image registry</div>";
+        echo "<a href=\"$repositorySource\" target=\"blank\">$repositorySource</a>";
+    }
+
+    if (str_contains($repositorySource, 'github')) {
         $repositorySourceSegments = explode("/", $repositorySource);
         $releasesUrl = "https://api.github.com/repos/" . implode("/", array_slice($repositorySourceSegments, sizeof($repositorySourceSegments) - 2, 2)) . "/releases";
         $ch = getCurlHandle($releasesUrl, 'GET');
@@ -34,6 +41,11 @@ foreach ($containers as $container) {
             "X-GitHub-Api-Version: 2022-11-28"
         ]);
         $releases = json_decode(curl_exec($ch));
+
+        if (!$releases || !is_array($releases)) {
+            echo "<h3>Error no releases found!</h3>";
+            echo "<a href=\"$releasesUrl\" target=\"blank\">$releasesUrl</a>";
+        }
 
         $substrArray = ["night", "dev", "beta", "alpha", "test"];
 
@@ -46,34 +58,38 @@ foreach ($containers as $container) {
             return $release->prerelease == $isPrerelease;
         });
 
-        if (!sizeof($releases)) {
+        usort($releases, function ($a, $b) {
+            return strtotime($b->created_at) <=> strtotime($a->created_at);
+        });
+
+        if (!$releases || !sizeof($releases) || !is_array($releases)) {
             echo '<pre style="overflow-y: scroll; height:400px;">';
             echo "<h3>Error no releases found!</h3>" .
+                "<a href=\"$releasesUrl\" target=\"blank\">$releasesUrl</a>" .
                 "<div>org.opencontainers.image.source=$repositorySource</div>" .
-                "<br/>" .
                 "<div>org.opencontainers.image.version=$currentImageSourceTag</div>" .
-                "<br/>" .
                 "<div>org.opencontainers.image.created_at=$currentImageCreatedAt</div>" .
                 "<br/>";
             echo "</pre>";
         } else {
             $firstRelease = reset($releases);
-            $imageCreatedAt = (new DateTime($firstRelease->created_at))->format('Y-m-d H:i:s');
+            $latestImageCreatedAt = (new DateTime($firstRelease->created_at))->format('Y-m-d H:i:s');
 
-            echo "<h3>$currentImageSourceTag ($currentImageCreatedAt) ---->  {$firstRelease->tag_name} ({$imageCreatedAt})</h3>";
-            if (!$currentImageSourceTag && !$currentImageCreatedAt) {
-                echo "<br/>";
-                echo "<h3>WARNING: No org.opencontainers.image.version or org.opencontainers.image.created_at found, displaying all releases</h3>";
-                echo "<br/>";
-                echo "<h3>Please request that these are added by the image creator for the best experience.</h3>";
+            echo "<h3>$currentImageSourceTag ($currentImageCreatedAt) ---->  {$firstRelease->tag_name} ({$latestImageCreatedAt})</h3>";
+            echo "<a href=\"$releasesUrl\" target=\"blank\">$releasesUrl</a>";
+            if (!$currentImageCreatedAt) {
+                echo "<h3>WARNING: No org.opencontainers.image.created_at found, displaying all releases</h3>";
+                echo "<div>Please request that org.opencontainers.image.created_at is added by image creator for the best experience.</div>";
+            } else {
+                $currentImageCreatedAt = (new DateTime($currentImageCreatedAt))->format('Y-m-d H:i:s');
             }
             echo '<pre style="overflow-y: scroll; height:400px;">';
             foreach ($releases as &$item) {
-                if ($item->tag_name <= $currentImageSourceTag || $imageCreatedAt <= $currentImageCreatedAt) {
+                if ($latestImageCreatedAt <= $currentImageCreatedAt) {
                     continue;
                 }
-                $imageCreatedAt = (new DateTime($item->created_at))->format('Y-m-d H:i:s');
-                echo "<a target=\"blank\" href=\"{$item->html_url}\">{$item->tag_name} ($imageCreatedAt)</a>" .
+                $latestImageCreatedAt = (new DateTime($item->created_at))->format('Y-m-d H:i:s');
+                echo "<a target=\"blank\" href=\"{$item->html_url}\">{$item->tag_name} ($latestImageCreatedAt)</a>" .
                     "<div>{$item->body}</div>" .
                     "<br/>";
             }
