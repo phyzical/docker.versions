@@ -8,6 +8,7 @@ require_once ("$documentRoot/webGui/include/Helpers.php");
 
 $dockerClient = new DockerClient();
 $dockerUpdate = new DockerUpdate();
+$dockerTemplates = new DockerTemplates();
 
 $containers = array_filter($dockerClient->getDockerJSON("/containers/json?all=1"), function ($ct) {
     return in_array(str_replace("/", "", $ct['Names'][0]), $_GET["cts"]) && $ct['Labels']['net.unraid.docker.managed'];
@@ -24,10 +25,19 @@ foreach ($containers as $container) {
     if (!$repositorySource) {
         echo "<h3>Warning no org.opencontainers.image.source label</h3>";
         echo "<div>Please request that org.opencontainers.image.source is added by image creator for the best experience.</div>";
-        $repoGuess = implode('/', array_reverse(array_slice(array_reverse(explode('/', explode(':', $currentImage)[0])), 0, 2)));
-        $repositorySource = "https://github.com/{$repoGuess}";
-        echo "<div>Falling back to a guess based on container image registry</div>";
-        echo "<a href=\"$repositorySource\" target=\"blank\">$repositorySource</a>";
+        $repositorySource = $dockerTemplates->getTemplateValue($currentImage, "Project");
+
+        if ($repositorySource && preg_match('/github\.com\/\w+\/\w+/', $repositorySource)) {
+            echo "<div>Falling back to Project field of the unraid template</div>";
+            echo "<a href=\"$repositorySource\" target=\"blank\">$repositorySource</a>";
+        } else {
+            echo "<div>Couldn't fall back to project url didn't look like a github repo</div>";
+            echo "<div>$repositorySource</div>";
+            $repoGuess = implode('/', array_reverse(array_slice(array_reverse(explode('/', explode(':', $currentImage)[0])), 0, 2)));
+            $repositorySource = "https://github.com/{$repoGuess}";
+            echo "<div>Falling back to a guess based on container image registry</div>";
+            echo "<a href=\"$repositorySource\" target=\"blank\">$repositorySource</a>";
+        }
     }
 
     if (str_contains($repositorySource, 'github')) {

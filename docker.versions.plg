@@ -7,7 +7,7 @@
     <!ENTITY plugdir "/usr/local/emhttp/plugins/&name;">
     <!ENTITY pluginURL "https://raw.githubusercontent.com/&github;/main/&name;.plg">
     <!ENTITY version "2024.07.25">
-    <!ENTITY md5 "db833794573fdedfe52ce6cdaa773d4d">
+    <!ENTITY md5 "8dae2846653e3e5dbdee029e2c5b3873">
 ]>
 
 <PLUGIN name="&name;" author="&author;" version="&version;" launch="&launch;"
@@ -15,6 +15,8 @@
     <CHANGES>
         ###2024.07.24
         - Initial Release
+        ###2024.07.25
+        - Added logic to fall back to guesses based on various unraid properties and labels
     </CHANGES>
 
     <!-- New source file -->

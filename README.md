@@ -12,7 +12,10 @@ For the best experience images need the following labels:
 * `org.opencontainers.image.source`
 * `org.opencontainers.image.version`
 
-If `org.opencontainers.image.source` is missing it will do its best to guess the github repo based on the image registry.
+If `org.opencontainers.image.source` is missing it will;
+
+* check if its template has a project configured, if so use that as a release base.
+* Otherwise do its best to guess the github repo based on the image registry.
 
 If `org.opencontainers.image.created` is missing it will simply display all.
 
