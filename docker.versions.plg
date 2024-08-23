@@ -3,11 +3,11 @@
     <!ENTITY name "docker.versions">
     <!ENTITY author "phyzical">
     <!ENTITY github "&author;/&name;">
-    <!ENTITY launch "Settings/DockerVersions">
+    <!ENTITY launch "Settings/docker.versions">
     <!ENTITY plugdir "/usr/local/emhttp/plugins/&name;">
     <!ENTITY pluginURL "https://raw.githubusercontent.com/&github;/main/&name;.plg">
-    <!ENTITY version "2024.07.25">
-    <!ENTITY md5 "8dae2846653e3e5dbdee029e2c5b3873">
+    <!ENTITY version "2024.08.23">
+    <!ENTITY md5 "10586fdd15d7c5c54668ed9d5c3db6f7">
 ]>
 
 <PLUGIN name="&name;" author="&author;" version="&version;" launch="&launch;"
@@ -17,6 +17,11 @@
         - Initial Release
         ###2024.07.25
         - Added logic to fall back to guesses based on various unraid properties and labels
+        ###2024.08.23
+        - Added logic to fall back to git tags when no releases are found on github
+        - Added new icon
+        - Added new settings page to add github token
+        - Refactored all logic into namespaced classes for better organization
     </CHANGES>
 
     <!-- New source file -->
