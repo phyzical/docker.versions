@@ -1,0 +1,15 @@
+Menu="Utilities"
+Title="docker.versions"
+Icon="icon.png"
+Markdown="false"
+---
+
+<? 
+    $documentRoot = $_SERVER['DOCUMENT_ROOT'] ?? '/usr/local/emhttp';
+    require_once("$documentRoot/plugins/docker.versions/server/GithubToken.php");
+    use DockerVersions\GithubToken;
+
+    GithubToken::generateForm();
+?>
+
+
