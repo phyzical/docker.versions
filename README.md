@@ -1,5 +1,7 @@
 # docker.versions
 
+Until i workout how to add the plugin to CA install via https://raw.githubusercontent.com/phyzical/docker.versions/main/docker.versions.plg
+
 unraid plugin to use open container labels to attempt to extract some changelogs when a new version is detected
 
 At the moment github is only supported, happy to support more just need examples.
