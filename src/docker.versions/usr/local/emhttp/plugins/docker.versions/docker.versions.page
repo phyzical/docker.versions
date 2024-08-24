@@ -6,8 +6,8 @@ Markdown="false"
 
 <? 
     $documentRoot = $_SERVER['DOCUMENT_ROOT'] ?? '/usr/local/emhttp';
-    require_once("$documentRoot/plugins/docker.versions/server/GithubToken.php");
-    use DockerVersions\GithubToken;
+    require_once("$documentRoot/plugins/docker.versions/server/config/GithubToken.php");
+    use DockerVersions\Config\GithubToken;
 
     GithubToken::generateForm();
 ?>
