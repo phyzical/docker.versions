@@ -10,7 +10,8 @@ class Container
         "version" => "org.opencontainers.image.version",
         "created" => "org.opencontainers.image.created",
         "source" => "org.opencontainers.image.source",
-        "changelog" => "docker.versions.changelogUrl"
+        "changelog" => "docker.versions.changelogUrl",
+        "unraidManaged" => "net.unraid.docker.managed"
     ]);
     public string $imageVersion;
     public string $imageCreatedAt;
@@ -63,7 +64,6 @@ class Container
         }
         return $repositorySource;
     }
-
 }
 
 ?>

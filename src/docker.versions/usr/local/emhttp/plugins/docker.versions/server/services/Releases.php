@@ -5,21 +5,31 @@ use Exception;
 $documentRoot = $_SERVER['DOCUMENT_ROOT'] ?? '/usr/local/emhttp';
 require_once("$documentRoot/plugins/docker.versions/server/models/Release.php");
 require_once("$documentRoot/plugins/docker.versions/server/GithubToken.php");
-use DockerVersions\GithubToken;
+use DockerVersions\Config\GithubToken;
 use DockerVersions\Models\Release;
-
+use DockerVersions\Models\Container;
+use DateTime;
 class Releases
 {
     public string $githubURL;
     public string $releasesUrl;
 
+    public Container $container;
 
+    /**
+     * Releases constructor.
+     * @param Container $container
+     */
     public function __construct(
-        string $repositorySource
+        Container $container
     ) {
-        $this->githubURL = $this->getGithubURL($repositorySource);
+        $this->container = $container;
+        $this->githubURL = $this->getGithubURL($container->repositorySource);
     }
 
+    /**
+     * @var Release[]
+     */
     public array $releases;
 
     public const BETA_TAGS = ["night", "dev", "beta", "alpha", "test"];
@@ -105,6 +115,63 @@ class Releases
     }
 
     /**
+     * Get the HTML for no releases found.
+     * @return string
+     */
+    function noReleasesHTML(): string
+    {
+        $html = '<pre style="overflow-y: scroll; height:400px;">';
+        $html .= "<h3>Error no releases found!</h3>" .
+            "<a href=\"$this->releasesUrl\" target=\"blank\">$this->releasesUrl</a>" .
+            "<div>" . Container::LABELS->source . "=" . $this->container->repositorySource . "</div>" .
+            "<div>" . Container::LABELS->version . "=" . $this->container->imageVersion . "</div>" .
+            "<div>" . Container::LABELS->createdAt . "=" . $this->container->imageCreatedAt . "</div>" .
+            "<br/>";
+        $html .= "</pre>";
+        return $html;
+    }
+
+    /**
+     * Get the HTML for no createdAt label.
+     * @return string
+     */
+    function noCreatedAtHTML(): string
+    {
+        $html = "<h3>WARNING: No " . Container::LABELS->createdAt . " image label found</h3>";
+        $html .= "<p>Please request that " . Container::LABELS->createdAt . " is added by image creator for the best experience.</p>";
+        $html .= "<p>Falling back to displaying all " . $this->first()->type . "s</p>";
+        return $html;
+    }
+
+    /**
+     * Get the HTML for releases.
+     * @param string $currentImageSourceTag
+     * @param string $currentImageCreatedAt
+     * @return string
+     */
+    function releasesHTML($currentImageSourceTag, $currentImageCreatedAt): string
+    {
+        $firstRelease = $this->first();
+        $latestImageCreatedAt = (new DateTime($firstRelease->createdAt))->format('Y-m-d H:i:s');
+
+        $html = "<h3>$currentImageSourceTag ($currentImageCreatedAt) ---->  {$firstRelease->tagName} ({$latestImageCreatedAt})</h3>";
+        $html .= "<a href=\"$this->releasesUrl\" target=\"blank\">Used this url for changelog information</a>";
+
+        $html .= '<pre style="overflow-y: scroll; height:400px;">';
+        foreach ($this->releases as &$item) {
+            if ($latestImageCreatedAt <= $currentImageCreatedAt) {
+                continue;
+            }
+            $html .= "<a target=\"blank\" href=\"{$item->htmlUrl}\">{$item->tagName} (" .
+                (new DateTime($item->createdAt))->format('Y-m-d H:i:s') . ")</a>" .
+                "<div>{$item->body}</div>" .
+                "<br/>";
+        }
+        $html .= "</pre>";
+        return $html;
+    }
+
+    /**
      * Get the github URL for the repository source.
      *
      * @param string $repositorySource
@@ -123,11 +190,10 @@ class Releases
 
     /**
      * Organise releases and return an array of Release objects.
-     *
-     * @param string $currentImageSourceTag
      */
-    function organiseReleases(string $currentImageSourceTag): void
+    function organiseReleases(): void
     {
+        $currentImageSourceTag = $this->container->imageVersion;
         // Use array_reduce to iterate over each element and check if it's contained in $currentImageSourceTag
         $isPrerelease = array_reduce(self::BETA_TAGS, function ($carry, $item) use ($currentImageSourceTag) {
             return $carry || str_contains($currentImageSourceTag, $item);
