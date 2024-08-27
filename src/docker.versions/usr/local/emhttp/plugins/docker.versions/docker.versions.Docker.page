@@ -2,6 +2,9 @@ Menu="Docker"
 Icon="server"
 ---
 
-<? $type = 'docker' ?>
+<? 
+    $type = 'docker';
+    $documentRoot = $_SERVER['DOCUMENT_ROOT'] ?? '/usr/local/emhttp';
+?>
 
-<script defer src="<?autov('/plugins/docker.versions/scripts/docker.js')?>"></script>
+<script defer src="<?autov('/plugins/docker.versions/scripts/changelog.js')?>"></script>

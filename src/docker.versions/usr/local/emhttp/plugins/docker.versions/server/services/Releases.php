@@ -4,11 +4,15 @@ namespace DockerVersions\Services;
 use Exception;
 $documentRoot = $_SERVER['DOCUMENT_ROOT'] ?? '/usr/local/emhttp';
 require_once("$documentRoot/plugins/docker.versions/server/models/Release.php");
-require_once("$documentRoot/plugins/docker.versions/server/GithubToken.php");
+require_once("$documentRoot/plugins/docker.versions/server/models/Container.php");
+require_once("$documentRoot/plugins/docker.versions/server/helpers/Publish.php");
+require_once("$documentRoot/plugins/docker.versions/server/config/GithubToken.php");
 use DockerVersions\Config\GithubToken;
 use DockerVersions\Models\Release;
 use DockerVersions\Models\Container;
+use DockerVersions\Helpers\Publish;
 use DateTime;
+
 class Releases
 {
     public string $githubURL;
@@ -80,7 +84,7 @@ class Releases
         if (!empty($token)) {
             $headers[] = "Authorization: Bearer $token";
         } else {
-            echo "<h3> WARNING: Without a github token you may find that this just stops working</h3>";
+            Publish::message("<h3> WARNING: Without a github token you may find that this just stops working</h3>");
         }
         curl_setopt($ch, CURLOPT_HTTPHEADER, $headers);
         $body = curl_exec($ch);
@@ -111,64 +115,56 @@ class Releases
 
     function hasReleases(): bool
     {
-        return $this->releases && sizeof($this->releases) > 0;
+        return $this->releases && count($this->releases) > 0;
     }
 
     /**
      * Get the HTML for no releases found.
-     * @return string
      */
-    function noReleasesHTML(): string
+    function noReleasesHTML(): void
     {
-        $html = '<pre style="overflow-y: scroll; height:400px;">';
+        $html = '<pre class="error" style="overflow-y: scroll; height:400px;">';
         $html .= "<h3>Error no releases found!</h3>" .
             "<a href=\"$this->releasesUrl\" target=\"blank\">$this->releasesUrl</a>" .
-            "<div>" . Container::LABELS->source . "=" . $this->container->repositorySource . "</div>" .
-            "<div>" . Container::LABELS->version . "=" . $this->container->imageVersion . "</div>" .
-            "<div>" . Container::LABELS->createdAt . "=" . $this->container->imageCreatedAt . "</div>" .
+            "<div>" . Container::$LABELS["source"] . "=" . $this->container->repositorySource . "</div>" .
+            "<div>" . Container::$LABELS["version"] . "=" . $this->container->imageVersion . "</div>" .
+            "<div>" . Container::$LABELS["created"] . "=" . $this->container->imageCreatedAt . "</div>" .
             "<br/>";
         $html .= "</pre>";
-        return $html;
+        Publish::message($html);
     }
 
     /**
      * Get the HTML for no createdAt label.
-     * @return string
      */
-    function noCreatedAtHTML(): string
+    function noCreatedAtHTML(): void
     {
-        $html = "<h3>WARNING: No " . Container::LABELS->createdAt . " image label found</h3>";
-        $html .= "<p>Please request that " . Container::LABELS->createdAt . " is added by image creator for the best experience.</p>";
-        $html .= "<p>Falling back to displaying all " . $this->first()->type . "s</p>";
-        return $html;
+        Publish::message("<h3>WARNING: No " . Container::$LABELS["created"] . " image label found</h3>");
+        Publish::message("<p>Please request that " . Container::$LABELS["created"] . " is added by image creator for the best experience.</p>");
     }
 
     /**
      * Get the HTML for releases.
      * @param string $currentImageSourceTag
      * @param string $currentImageCreatedAt
-     * @return string
      */
-    function releasesHTML($currentImageSourceTag, $currentImageCreatedAt): string
+    function releasesHTML($currentImageSourceTag, $currentImageCreatedAt): void
     {
         $firstRelease = $this->first();
         $latestImageCreatedAt = (new DateTime($firstRelease->createdAt))->format('Y-m-d H:i:s');
 
-        $html = "<h3>$currentImageSourceTag ($currentImageCreatedAt) ---->  {$firstRelease->tagName} ({$latestImageCreatedAt})</h3>";
-        $html .= "<a href=\"$this->releasesUrl\" target=\"blank\">Used this url for changelog information</a>";
+        Publish::message("<h3>$currentImageSourceTag ($currentImageCreatedAt) ---->  {$firstRelease->tagName} ({$latestImageCreatedAt})</h3>");
+        Publish::message("<a href=\"$this->releasesUrl\" target=\"blank\">Used this url for changelog information</a>");
 
-        $html .= '<pre style="overflow-y: scroll; height:400px;">';
+        Publish::message('<pre class="releases" style="overflow-y: scroll; height:400px; border: 2px solid #000; padding: 10px;border-radius: 5px;background-color: #f9f9f9; "></pre>');
         foreach ($this->releases as &$item) {
             if ($latestImageCreatedAt <= $currentImageCreatedAt) {
                 continue;
             }
-            $html .= "<a target=\"blank\" href=\"{$item->htmlUrl}\">{$item->tagName} (" .
-                (new DateTime($item->createdAt))->format('Y-m-d H:i:s') . ")</a>" .
-                "<div>{$item->body}</div>" .
-                "<br/>";
+            Publish::message("<a class='releasesInfo' target=\"blank\" href=\"{$item->htmlUrl}\">{$item->tagName} (" .
+                (new DateTime($item->createdAt))->format('Y-m-d H:i:s') . ")</a><br><br>");
+            Publish::message("<div class='releasesInfo'>{$item->body}</div><br><hr>");
         }
-        $html .= "</pre>";
-        return $html;
     }
 
     /**
@@ -231,7 +227,7 @@ class Releases
         }, $releases);
 
         if (!$this->hasReleases()) {
-            echo "<h3>WARNING: no releases found! (<a href=\"$releasesUrl\" target=\"blank\">Releases</a>)</h3>";
+            Publish::message("<h3>WARNING: no releases found! (<a href=\"$releasesUrl\" target=\"blank\">Releases</a>)</h3>");
         }
     }
     /**
@@ -243,7 +239,10 @@ class Releases
         $this->releasesUrl = $tagsUrl;
         $tags = $this->makeReq($tagsUrl);
 
+        Publish::message("<div class='pullTags'></div>");
         $this->releases = array_map(function ($tag) {
+            Publish::message("<p class='pullInfo'>Pulling tag information for $tag->name</p>");
+
             $tag_commit = $this->makeReq($tag->commit->url);
 
             return new Release(
@@ -258,8 +257,9 @@ class Releases
         }, $tags);
 
         if (!$this->hasReleases()) {
-            echo "<h3>WARNING: no tags found! (<a href=\"$tagsUrl\" target=\"blank\">Tags</a>)</h3>";
+            Publish::message("<h3>WARNING: no tags found! (<a href=\"$tagsUrl\" target=\"blank\">Tags</a>)</h3>");
         }
+        Publish::message("<p class='pullInfo'></p>");
     }
 }
 

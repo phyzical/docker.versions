@@ -3,24 +3,29 @@ namespace DockerVersions\Services;
 
 $documentRoot = $_SERVER['DOCUMENT_ROOT'] ?? '/usr/local/emhttp';
 require_once("$documentRoot/plugins/dynamix.docker.manager/include/DockerClient.php");
-require_once("$documentRoot/plugins/docker.versions/server/Releases.php");
+require_once("$documentRoot/plugins/docker.versions/server/services/Releases.php");
 require_once("$documentRoot/plugins/docker.versions/server/models/Container.php");
+require_once("$documentRoot/plugins/docker.versions/server/helpers/Publish.php");
 
 use DockerVersions\Models\Container;
+use DockerVersions\Services\Releases;
+use DockerVersions\Helpers\Publish;
+use DockerClient;
 use DateTime;
 
 class Containers
 {
     /**
      * Summary of getAll
+     * @param string[] $containers
      * @return Container[]
      */
-    static function getAll()
+    static function getAll($containers)
     {
         $dockerClient = new DockerClient();
 
-        $containers = array_filter($dockerClient->getDockerJSON("/containers/json?all=1"), function ($ct) {
-            return in_array(str_replace("/", "", $ct['Names'][0]), $_GET["cts"]) && $ct['Labels'][Container::LABELS->unraidManaged];
+        $containers = array_filter($dockerClient->getDockerJSON("/containers/json?all=1"), function ($ct) use ($containers) {
+            return in_array(str_replace("/", "", $ct['Names'][0]), $containers) && $ct['Labels'][Container::$LABELS["unraidManaged"]];
         });
 
         return array_map(function ($container) {
@@ -31,10 +36,11 @@ class Containers
     /**
      * Get the container change logs.
      * @return void
+     * @param string[] $containers
      */
-    static function getChangeLogs(): void
+    static function getChangeLogs($containers): void
     {
-        $containers = self::getAll();
+        $containers = self::getAll($containers);
 
         foreach ($containers as $container) {
             $releases = new Releases($container);
@@ -42,30 +48,35 @@ class Containers
             if ($container->isGithubRepository()) {
                 $currentImageSourceTag = $container->imageVersion;
                 $currentImageCreatedAt = $container->imageCreatedAt;
+
+                if (!$currentImageCreatedAt) {
+                    $releases->noCreatedAtHTML();
+                }
+
                 $releases->pullReleases();
 
                 if (!$releases->hasReleases()) {
-                    echo "<p>Falling back to tags for information</p>";
+                    Publish::message("<p>Falling back to last 30 tags for information</p>");
                     $releases->pullTags();
                 }
 
                 $releases->organiseReleases();
 
                 if (!$releases->hasReleases()) {
-                    echo $releases->noReleasesHTML();
+                    $releases->noReleasesHTML();
                 } else {
                     if (!$currentImageCreatedAt) {
-                        echo $releases->noCreatedAtHTML();
+                        Publish::message("<p>Falling back to displaying all " . $releases->first()->type . "s</p>");
                         $currentImageCreatedAt = (new DateTime($releases->last()->createdAt))->format('Y-m-d H:i:s');
                         $currentImageSourceTag = $releases->last()->tagName;
                     } else {
                         $currentImageCreatedAt = (new DateTime($currentImageCreatedAt))->format('Y-m-d H:i:s');
                     }
 
-                    echo $releases->releasesHTML($currentImageSourceTag, $currentImageCreatedAt);
+                    $releases->releasesHTML($currentImageSourceTag, $currentImageCreatedAt);
                 }
             } else {
-                echo "<h3>Error only github repositories are supported at this time!</h3>";
+                Publish::message("<h3>Error only github repositories are supported at this time!</h3>");
             }
         }
     }
