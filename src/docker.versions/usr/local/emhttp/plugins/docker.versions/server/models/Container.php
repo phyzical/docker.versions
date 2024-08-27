@@ -13,7 +13,7 @@ class Container
         "version" => "org.opencontainers.image.version",
         "created" => "org.opencontainers.image.created",
         "source" => "org.opencontainers.image.source",
-        "changelog" => "docker.versions.changelogUrl",
+        "changelog" => "docker.versions.changelog_url",
         "unraidManaged" => "net.unraid.docker.managed"
     ];
     public string $imageVersion;
