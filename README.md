@@ -27,8 +27,6 @@ If `org.opencontainers.image.version` is present this will be used to subset ima
 
 If no releases are found it will fall back to trying to pull the tags;
 
-You can also manually add a label of `docker.versions.changelog_url`, this will be used to populate a separate list of changelog information, assumes there are chucks of changelogs separated by either tag names or dates prepended by md titles i.e `# 2012-12-12` or `# v1.2.3`
-
 below are a few examples of what can happen
 
 * All Labels
@@ -42,6 +40,3 @@ below are a few examples of what can happen
 
 * No Releases, fallback to using tags
 ![No Releases, fallback to using tags](images/tags.png)
-
-<!-- * Changelog url label -->
-<!-- ![TODO](images/changelog.png) -->
