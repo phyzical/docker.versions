@@ -27,6 +27,10 @@ If `org.opencontainers.image.version` is present this will be used to subset ima
 
 If no releases are found it will fall back to trying to pull the tags;
 
+You can also provide a secondary source via `docker.versions.source` This will be used as a secondary source to show changesets for example if the image is `https://github.com/linuxserver/docker-sonarr` you can also provide `https://github.com/Sonarr/Sonarr` and it will do its best to match up a secondary change with a primary change.
+
+If no primary found secondary will work as if its the primary.
+
 below are a few examples of what can happen
 
 * All Labels

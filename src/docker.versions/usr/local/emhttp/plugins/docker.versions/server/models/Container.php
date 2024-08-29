@@ -13,21 +13,24 @@ class Container
         "version" => "org.opencontainers.image.version",
         "created" => "org.opencontainers.image.created",
         "source" => "org.opencontainers.image.source",
-        "changelog" => "docker.versions.changelog_url",
+        "secondarySource" => "docker.versions.source",
         "unraidManaged" => "net.unraid.docker.managed"
     ];
     public string $imageVersion;
+    public string $name;
     public string $imageCreatedAt;
     public string $repositorySource;
-    public string $changelogUrl;
+    public string $repositorySecondarySource;
+
 
     public function __construct(
         array $containerPayload,
     ) {
         $this->repositorySource = $this->getRepositorySource($containerPayload);
+        $this->name = str_replace("/", "", $containerPayload['Names'][0]);
+        $this->repositorySecondarySource = $containerPayload["Labels"][self::$LABELS["secondarySource"]] ?? "";
         $this->imageVersion = $containerPayload["Labels"][self::$LABELS["version"]] ?? "";
         $this->imageCreatedAt = $containerPayload["Labels"][self::$LABELS["created"]] ?? "";
-        $this->changelogUrl = $containerPayload["Labels"][self::$LABELS["changelog"]] ?? "";
     }
 
     /**
@@ -51,7 +54,7 @@ class Container
             $currentImage = $containerPayload["Image"];
             $repositorySource = (new DockerTemplates())->getTemplateValue($currentImage, "Project");
             Publish::message("<h3>Warning no " . self::$LABELS["source"] . " label</h3>");
-            Publish::message("<div>Please request that " . self::$LABELS["source"] . " is added by image creator for the best experience.</div>");
+            Publish::message("<div>Please request that " . self::$LABELS["source"] . " is added by image creator for the best experience Or simply add the label yourself to the running container.</div>");
 
             if ($repositorySource && preg_match('/github\.com\/\w+\/\w+/', $repositorySource)) {
                 Publish::message("<div>Falling back to Project field of the unraid template</div>");

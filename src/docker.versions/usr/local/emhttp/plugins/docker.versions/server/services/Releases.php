@@ -15,7 +15,7 @@ use DateTime;
 
 class Releases
 {
-    public string $githubURL;
+    public string $repositorySource;
     public string $releasesUrl;
 
     public Container $container;
@@ -25,16 +25,17 @@ class Releases
      * @param Container $container
      */
     public function __construct(
-        Container $container
+        Container $container,
+        string $repositorySource
     ) {
         $this->container = $container;
-        $this->githubURL = $this->getGithubURL($container->repositorySource);
+        $this->repositorySource = $repositorySource;
     }
 
     /**
      * @var Release[]
      */
-    public array $releases;
+    public array $releases = [];
 
     public const BETA_TAGS = ["night", "dev", "beta", "alpha", "test"];
 
@@ -119,64 +120,14 @@ class Releases
     }
 
     /**
-     * Get the HTML for no releases found.
-     */
-    function noReleasesHTML(): void
-    {
-        $html = '<pre class="error" style="overflow-y: scroll; height:400px;">';
-        $html .= "<h3>Error no releases found!</h3>" .
-            "<a href=\"$this->releasesUrl\" target=\"blank\">$this->releasesUrl</a>" .
-            "<div>" . Container::$LABELS["source"] . "=" . $this->container->repositorySource . "</div>" .
-            "<div>" . Container::$LABELS["version"] . "=" . $this->container->imageVersion . "</div>" .
-            "<div>" . Container::$LABELS["created"] . "=" . $this->container->imageCreatedAt . "</div>" .
-            "<br/>";
-        $html .= "</pre>";
-        Publish::message($html);
-    }
-
-    /**
-     * Get the HTML for no createdAt label.
-     */
-    function noCreatedAtHTML(): void
-    {
-        Publish::message("<h3>WARNING: No " . Container::$LABELS["created"] . " image label found</h3>");
-        Publish::message("<p>Please request that " . Container::$LABELS["created"] . " is added by image creator for the best experience.</p>");
-    }
-
-    /**
-     * Get the HTML for releases.
-     * @param string $currentImageSourceTag
-     * @param string $currentImageCreatedAt
-     */
-    function releasesHTML($currentImageSourceTag, $currentImageCreatedAt): void
-    {
-        $firstRelease = $this->first();
-        $latestImageCreatedAt = (new DateTime($firstRelease->createdAt))->format('Y-m-d H:i:s');
-
-        Publish::message("<h3>$currentImageSourceTag ($currentImageCreatedAt) ---->  {$firstRelease->tagName} ({$latestImageCreatedAt})</h3>");
-        Publish::message("<a href=\"$this->releasesUrl\" target=\"blank\">Used this url for changelog information</a>");
-
-        Publish::message('<pre class="releases" style="overflow-y: scroll; height:400px; border: 2px solid #000; padding: 10px;border-radius: 5px;background-color: #f9f9f9; "></pre>');
-        foreach ($this->releases as &$item) {
-            if ($latestImageCreatedAt <= $currentImageCreatedAt) {
-                continue;
-            }
-            Publish::message("<a class='releasesInfo' target=\"blank\" href=\"{$item->htmlUrl}\">{$item->tagName} (" .
-                (new DateTime($item->createdAt))->format('Y-m-d H:i:s') . ")</a><br><br>");
-            Publish::message("<div class='releasesInfo'>{$item->body}</div><br><hr>");
-        }
-    }
-
-    /**
      * Get the github URL for the repository source.
      *
-     * @param string $repositorySource
      * @return string
      */
 
-    private function getGithubURL($repositorySource): string
+    private function githubURL(): string
     {
-        $repositorySourceSegments = explode("/", $repositorySource);
+        $repositorySourceSegments = explode("/", $this->repositorySource);
         return "https://api.github.com/repos/" . implode("/", array_slice(
             $repositorySourceSegments,
             sizeof($repositorySourceSegments) - 2,
@@ -197,12 +148,12 @@ class Releases
 
         // Filter if $isPrerelease
         $this->releases = array_filter($this->releases, function ($release) use ($isPrerelease) {
-            return $release->prerelease == $isPrerelease;
+            return $release->preRelease == $isPrerelease;
         });
 
         // Sort by created_at
         usort($this->releases, function ($a, $b) {
-            return strtotime($b->created_at) <=> strtotime($a->created_at);
+            return strtotime($b->createdAt) <=> strtotime($a->createdAt);
         });
     }
 
@@ -211,18 +162,29 @@ class Releases
      */
     function pullReleases(): void
     {
-        $releasesUrl = $this->githubURL . "/releases";
+        $releasesUrl = $this->githubURL() . "/releases";
         $this->releasesUrl = $releasesUrl;
 
         $releases = $this->makeReq($releasesUrl);
+        // $page = 1;
+        // $releases = [];
+        // do {
+        //     $releases = array_merge($releases, $this->makeReq("$releasesUrl?per_page=100&page=$page"));
+        //     $page++;
+        // } while (count($releases) % 100 == 0);
+
         $this->releases = array_map(function ($release) {
+            $tagName = $release->tag_name;
+            $isPrerelease = array_reduce(self::BETA_TAGS, function ($carry, $item) use ($tagName) {
+                return $carry || str_contains($tagName, $item);
+            }, false);
             return new Release(
                 "release",
-                $release->tag_name,
+                $tagName,
                 $release->created_at,
                 $release->html_url,
                 $release->body,
-                $release->prerelease
+                $release->prerelease || $isPrerelease
             );
         }, $releases);
 
@@ -235,9 +197,16 @@ class Releases
      */
     function pullTags(): void
     {
-        $tagsUrl = $this->githubURL . "/tags";
+        $tagsUrl = $this->githubURL() . "/tags";
         $this->releasesUrl = $tagsUrl;
         $tags = $this->makeReq($tagsUrl);
+
+        // $page = 1;
+        // $tags = [];
+        // do {
+        //     $tags = array_merge($tags, $this->makeReq("$tagsUrl?per_page=100&page=$page"));
+        //     $page++;
+        // } while (count($tags) % 100 == 0);
 
         Publish::message("<div class='pullTags'></div>");
         $this->releases = array_map(function ($tag) {
