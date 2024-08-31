@@ -17,6 +17,7 @@ class Releases
 {
     public string $repositorySource;
     public string $releasesUrl;
+    const perPage = "30";
 
     public Container $container;
 
@@ -73,8 +74,9 @@ class Releases
      * @param string $url
      * @return array
      */
-    function makeReq(string $url): array|object
+    function makeReq(string $url, string $secondaryMessage = null): array|object
     {
+        Publish::loadingMessage("Loading " . ($secondaryMessage ?? $url));
         $ch = getCurlHandle($url, 'GET');
         $headers = [
             "Accept: application/vnd.github+json",
@@ -105,6 +107,9 @@ class Releases
         if ($http_status >= 400) {
             throw new Exception("HTTP error: $http_status. Response: $body");
         }
+
+        Publish::loadingMessage("");
+
 
         return json_decode($body);
     }
@@ -140,21 +145,44 @@ class Releases
      */
     function organiseReleases(): void
     {
+        Publish::loadingMessage("Organising releases");
         $currentImageSourceTag = $this->container->imageVersion;
         // Use array_reduce to iterate over each element and check if it's contained in $currentImageSourceTag
         $isPrerelease = array_reduce(self::BETA_TAGS, function ($carry, $item) use ($currentImageSourceTag) {
             return $carry || str_contains($currentImageSourceTag, $item);
         }, false);
 
-        // Filter if $isPrerelease
-        $this->releases = array_filter($this->releases, function ($release) use ($isPrerelease) {
-            return $release->preRelease == $isPrerelease;
-        });
+        $processedReleases = [];
+        while (!empty($this->releases)) {
+            // we pop items to save on memory
+            $release = array_shift($this->releases);
+            if ($release->preRelease != $isPrerelease) {
+                continue;
+            }
+
+            $add = false;
+
+            foreach ($processedReleases as $processedRelease) {
+                if (
+                    $release->tagName != $processedRelease->tagName && $release->body == $processedRelease->body
+                ) {
+                    $processedRelease->extraReleases[] = $release;
+                } else {
+                    $add = true;
+                }
+            }
+            if ($add || empty($processedReleases)) {
+                $processedReleases[] = $release;
+            }
+        }
+
+        $this->releases = $processedReleases;
 
         // Sort by created_at
         usort($this->releases, function ($a, $b) {
             return strtotime($b->createdAt) <=> strtotime($a->createdAt);
         });
+        Publish::loadingMessage("");
     }
 
     /**
@@ -162,14 +190,14 @@ class Releases
      */
     function pullReleases(): void
     {
-        $releasesUrl = $this->githubURL() . "/releases";
+        $releasesUrl = $this->githubURL() . "/releases?per_page=" . self::perPage;
         $this->releasesUrl = $releasesUrl;
 
         $releases = $this->makeReq($releasesUrl);
         // $page = 1;
         // $releases = [];
         // do {
-        //     $releases = array_merge($releases, $this->makeReq("$releasesUrl?per_page=100&page=$page"));
+        //     $releases = array_merge($releases, $this->makeReq("$releasesUrl&page=$page"));
         //     $page++;
         // } while (count($releases) % 100 == 0);
 
@@ -197,22 +225,19 @@ class Releases
      */
     function pullTags(): void
     {
-        $tagsUrl = $this->githubURL() . "/tags";
+        $tagsUrl = $this->githubURL() . "/tags?per_page=" . self::perPage;
         $this->releasesUrl = $tagsUrl;
         $tags = $this->makeReq($tagsUrl);
 
         // $page = 1;
         // $tags = [];
         // do {
-        //     $tags = array_merge($tags, $this->makeReq("$tagsUrl?per_page=100&page=$page"));
+        //     $tags = array_merge($tags, $this->makeReq("$tagsUrl&page=$page"));
         //     $page++;
         // } while (count($tags) % 100 == 0);
 
-        Publish::message("<div class='pullTags'></div>");
         $this->releases = array_map(function ($tag) {
-            Publish::message("<p class='pullInfo'>Pulling tag information for $tag->name</p>");
-
-            $tag_commit = $this->makeReq($tag->commit->url);
+            $tag_commit = $this->makeReq($tag->commit->url, $tag->name);
 
             return new Release(
                 "tag",
@@ -228,7 +253,6 @@ class Releases
         if (!$this->hasReleases()) {
             Publish::message("<h3>WARNING: no tags found! (<a href=\"$tagsUrl\" target=\"blank\">Tags</a>)</h3>");
         }
-        Publish::message("<p class='pullInfo'></p>");
     }
 }
 

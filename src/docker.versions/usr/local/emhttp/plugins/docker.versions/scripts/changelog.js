@@ -27,8 +27,8 @@ function popup(title, url) {
         changeLog_nchan = new NchanSubscriber('/sub/changelog');
         changeLog_nchan.on('message', function (data) {
             const iframeDocument = $('#myIframe')[0].contentDocument
-            if (data.includes("class='pullInfo'")) {
-                $(iframeDocument).find('.pullTags').html(data);
+            if (data.includes("class='loadingInfo'")) {
+                $(iframeDocument).find('.loading').html(data);
             } else if (data.includes("class='releasesInfo'")) {
                 $(iframeDocument).find('.releases').append(data);
             } else {

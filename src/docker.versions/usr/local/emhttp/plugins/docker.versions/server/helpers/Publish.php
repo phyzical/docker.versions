@@ -14,4 +14,18 @@ class Publish
     {
         publish('changelog', $message);
     }
+
+    /**
+     * Publish a loading message to the changeLog topic.
+     * @param string $message
+     */
+    public static function loadingMessage(string $message): void
+    {
+        if (empty($message)) {
+            $message = "\u{200B}";
+        }
+        Publish::message("<p class='loadingInfo'>$message</p>");
+    }
+
+
 }

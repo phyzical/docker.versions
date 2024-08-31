@@ -9,9 +9,16 @@ class Release
     public string $type;
     public string $tagName;
 
+    /**
+     * @var Release[]
+     */
+    public array $extraReleases = [];
+
     public string $createdAt;
     public string $htmlUrl;
     public string $body;
+
+
     public bool $preRelease;
 
     /**
@@ -39,8 +46,17 @@ class Release
         $this->tagName = $tagName;
         $this->createdAt = $createdAt;
         $this->htmlUrl = $htmlUrl;
-        $this->body = $body;
+        $this->body = gzcompress($body);
         $this->preRelease = $preRelease;
+    }
+
+    /**
+     * Get the body of the release.
+     * @return string
+     */
+    public function getBody(): string
+    {
+        return gzuncompress($this->body);
     }
 }
 
