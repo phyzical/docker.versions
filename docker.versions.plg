@@ -6,8 +6,8 @@
     <!ENTITY launch "Settings/docker.versions">
     <!ENTITY plugdir "/usr/local/emhttp/plugins/&name;">
     <!ENTITY pluginURL "https://raw.githubusercontent.com/&github;/main/&name;.plg">
-    <!ENTITY version "2024.08.27">
-    <!ENTITY md5 "fbe0649e45d457c1a48e185657e4f3f4">
+    <!ENTITY version "2024.08.31">
+    <!ENTITY md5 "7989b4e21476718f7f84035785d8b830">
 ]>
 
 <PLUGIN name="&name;" author="&author;" version="&version;" launch="&launch;"
@@ -25,6 +25,13 @@
         ###2024.08.27
         - Fixed broken refactor changes
         - imlemented nchan for dynamic popup updates
+        ###2024.08.31
+        - Skip pre-release versions
+        - Remove current image from changelogs
+        - Added logic to provide a secondary source of `docker.versions.source` to fall back to or use to add additional changelog information where a match is found by date or name
+        - Added logic to try and group releases together where the changelogs are the same
+        - Added logic to show loading text when requests are made to avoid it looking broken
+        - 
     </CHANGES>
 
     <!-- New source file -->
