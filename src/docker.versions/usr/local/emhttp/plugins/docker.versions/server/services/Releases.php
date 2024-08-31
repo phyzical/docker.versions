@@ -147,6 +147,7 @@ class Releases
     {
         Publish::loadingMessage("Organising releases");
         $currentImageSourceTag = $this->container->imageVersion;
+        $currentImageCreatedAt = $this->container->imageCreatedAt;
         // Use array_reduce to iterate over each element and check if it's contained in $currentImageSourceTag
         $isPrerelease = array_reduce(self::BETA_TAGS, function ($carry, $item) use ($currentImageSourceTag) {
             return $carry || str_contains($currentImageSourceTag, $item);
@@ -156,19 +157,21 @@ class Releases
         while (!empty($this->releases)) {
             // we pop items to save on memory
             $release = array_shift($this->releases);
-            if ($release->preRelease != $isPrerelease) {
+            if (
+                $release->preRelease != $isPrerelease ||
+                ($currentImageCreatedAt && (strtotime($release->createdAt) <= strtotime($currentImageCreatedAt)))
+            ) {
                 continue;
             }
 
-            $add = false;
+            $add = true;
 
             foreach ($processedReleases as $processedRelease) {
                 if (
                     $release->tagName != $processedRelease->tagName && $release->body == $processedRelease->body
                 ) {
                     $processedRelease->extraReleases[] = $release;
-                } else {
-                    $add = true;
+                    $add = false;
                 }
             }
             if ($add || empty($processedReleases)) {

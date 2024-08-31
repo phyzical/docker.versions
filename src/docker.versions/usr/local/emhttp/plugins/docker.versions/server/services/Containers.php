@@ -130,8 +130,6 @@ class Containers
                                 $tagA = filter_var($release->tagName, FILTER_SANITIZE_NUMBER_INT);
                                 $tagB = filter_var($secondaryRelease->tagName, FILTER_SANITIZE_NUMBER_INT);
 
-                                var_dump($tagA, $tagB);
-
                                 return str_contains($tagA, $tagB) || str_contains($tagB, $tagA) ||
                                     (abs(strtotime($release->createdAt) - strtotime($secondaryRelease->createdAt)) < (60 * 60 * 6));
                             });

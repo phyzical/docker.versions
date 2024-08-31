@@ -33,7 +33,7 @@ function popup(title, url) {
                 $(iframeDocument).find('.releases').append(data);
             } else {
                 const box = $(iframeDocument).find('body')
-                box.append(data).scrollTop(box[0].scrollHeight);
+                box.append(data)//.scrollTop(box[0].scrollHeight);
             }
         });
     }
