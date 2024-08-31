@@ -120,8 +120,10 @@ class Containers
                             Publish::message("<h3 class='releasesInfo'>Duplicate changelogs</h3>");
                         }
                         foreach ($release->extraReleases as $extraRelease) {
-                            Publish::message("<a class='releasesInfo' target=\"blank\" href=\"{$extraRelease->htmlUrl}\">{$extraRelease->tagName} (" .
-                                (new DateTime($extraRelease->createdAt))->format('Y-m-d H:i:s') . ")</a><br><br>");
+                            if (strtotime($extraRelease->createdAt) > strtotime($currentImageCreatedAt) && $extraRelease->tagName != $currentImageSourceTag) {
+                                Publish::message("<a class='releasesInfo' target=\"blank\" href=\"{$extraRelease->htmlUrl}\">{$extraRelease->tagName} (" .
+                                    (new DateTime($extraRelease->createdAt))->format('Y-m-d H:i:s') . ")</a><br><br>");
+                            }
                         }
                         Publish::message("<div class='releasesInfo'>{$release->getBody()}</div><br>");
 
@@ -133,7 +135,6 @@ class Containers
                                 return str_contains($tagA, $tagB) || str_contains($tagB, $tagA) ||
                                     (abs(strtotime($release->createdAt) - strtotime($secondaryRelease->createdAt)) < (60 * 60 * 6));
                             });
-                            // TODO: sonarr only found a amtch for first release double check mayber we needa be mroe aggressive 
 
                             if (!empty($secondaryReleaseMatches)) {
                                 Publish::message("<h3 class='releasesInfo'>Secondary Source</h3>");

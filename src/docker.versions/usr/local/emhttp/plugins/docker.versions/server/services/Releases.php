@@ -158,8 +158,9 @@ class Releases
             // we pop items to save on memory
             $release = array_shift($this->releases);
             if (
-                $release->preRelease != $isPrerelease ||
-                ($currentImageCreatedAt && (strtotime($release->createdAt) <= strtotime($currentImageCreatedAt)))
+                $release->preRelease != $isPrerelease
+                // ||
+                // ($currentImageCreatedAt && (strtotime($release->createdAt) <= strtotime($currentImageCreatedAt)))
             ) {
                 continue;
             }

@@ -44,3 +44,9 @@ below are a few examples of what can happen
 
 * No Releases, fallback to using tags
 ![No Releases, fallback to using tags](images/tags.png)
+
+* Using Secondary Source for changelogs
+![Secondary Source](images/secondary.png)
+
+* when duplicated changelogs are detected
+![Duplicated releases](images/duplicated.png)
