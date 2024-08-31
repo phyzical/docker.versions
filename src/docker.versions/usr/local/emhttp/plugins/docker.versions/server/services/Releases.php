@@ -141,26 +141,30 @@ class Releases
     }
 
     /**
+     * Check if the tag is a pre-release.
+     * @param string $tagName
+     * @return bool
+     */
+    private function isPreRelease(string $tagName): bool
+    {
+        return array_reduce(self::BETA_TAGS, function ($carry, $item) use ($tagName) {
+            return $carry || str_contains($tagName, $item);
+        }, false);
+    }
+
+    /**
      * Organise releases and return an array of Release objects.
      */
     function organiseReleases(): void
     {
         Publish::loadingMessage("Organising releases");
-        $currentImageSourceTag = $this->container->imageVersion;
-        $currentImageCreatedAt = $this->container->imageCreatedAt;
-        // Use array_reduce to iterate over each element and check if it's contained in $currentImageSourceTag
-        $isPrerelease = array_reduce(self::BETA_TAGS, function ($carry, $item) use ($currentImageSourceTag) {
-            return $carry || str_contains($currentImageSourceTag, $item);
-        }, false);
-
         $processedReleases = [];
         while (!empty($this->releases)) {
             // we pop items to save on memory
             $release = array_shift($this->releases);
+            // skip all prereleases
             if (
-                $release->preRelease != $isPrerelease
-                // ||
-                // ($currentImageCreatedAt && (strtotime($release->createdAt) <= strtotime($currentImageCreatedAt)))
+                $this->isPreRelease($release->tagName)
             ) {
                 continue;
             }

@@ -77,7 +77,8 @@ class Containers
 
                 $releases->organiseReleases();
 
-                if (!$releases->hasReleases()) {
+
+                if (!$releases->hasReleases() && (!$secondaryReleases || !$secondaryReleases->hasReleases())) {
                     $html = '<pre class="error" style="overflow-y: scroll; height:400px;">';
                     $html .= "<h3>Error no releases found!</h3>" .
                         "<a href=\"$releases->releasesUrl\" target=\"blank\">$releases->releasesUrl</a>" .
@@ -87,13 +88,29 @@ class Containers
                         "<br/>";
                     $html .= "</pre>";
                     Publish::message($html);
-                } else {
-                    $firstRelease = $releases->first();
+                    continue;
+                }
 
+                $firstRelease = $releases->first();
+                $lastRelease = $releases->last();
+                $releasesUrl = $releases->releasesUrl;
+                $allReleases = $releases->releases;
+                $allSecondaryReleases = $secondaryReleases->releases;
+                // If no primary found make secondary primary
+                if (!$releases->hasReleases() && $secondaryReleases && $secondaryReleases->hasReleases()) {
+                    Publish::message("<h3>WARNING: No primary source releases found, falling back to secondary</h3>");
+                    $firstRelease = $secondaryReleases->first();
+                    $lastRelease = $secondaryReleases->last();
+                    $releasesUrl = $secondaryReleases->releasesUrl;
+                    $allReleases = $secondaryReleases->releases;
+                    $allSecondaryReleases = [];
+                }
+
+                if (!empty($allReleases)) {
                     if (!$currentImageCreatedAt) {
                         Publish::message("<p>Falling back to displaying all " . $firstRelease->type . "s</p>");
-                        $currentImageCreatedAt = (new DateTime($releases->last()->createdAt))->format('Y-m-d H:i:s');
-                        $currentImageSourceTag = $releases->last()->tagName;
+                        $currentImageCreatedAt = (new DateTime($lastRelease->createdAt))->format('Y-m-d H:i:s');
+                        $currentImageSourceTag = $lastRelease->tagName;
                     } else {
                         $currentImageCreatedAt = (new DateTime($currentImageCreatedAt))->format('Y-m-d H:i:s');
                     }
@@ -102,14 +119,14 @@ class Containers
 
                     Publish::message("<h3>$container->name</h3>");
                     Publish::message("<h3>$currentImageSourceTag ($currentImageCreatedAt) ---->  {$firstRelease->tagName} ({$latestImageCreatedAt})</h3>");
-                    Publish::message("<a href=\"$releases->releasesUrl\" target=\"blank\">Url for primary changelog information</a>");
-                    if ($secondaryReleases) {
+                    Publish::message("<a href=\"$releasesUrl\" target=\"blank\">Url for primary changelog information</a>");
+                    if (!empty($allSecondaryReleases)) {
                         Publish::message("<br><a href=\"$secondaryReleases->releasesUrl\" target=\"blank\">Url for secondary changelog information</a>");
                     }
 
                     Publish::message('<pre class="releases" style="overflow-y: scroll; height:400px; border: 2px solid #000; padding: 10px;border-radius: 5px;background-color: #f9f9f9; "></pre>');
-                    // TODO: fall back to secondary if no releases
-                    foreach ($releases->releases as $release) {
+
+                    foreach ($allReleases as $release) {
                         $releaseCreatedAt = (new DateTime($release->createdAt))->format('Y-m-d H:i:s');
                         if (strtotime($currentImageCreatedAt) >= strtotime($releaseCreatedAt)) {
                             continue;
@@ -127,8 +144,8 @@ class Containers
                         }
                         Publish::message("<div class='releasesInfo'>{$release->getBody()}</div><br>");
 
-                        if ($secondaryReleases) {
-                            $secondaryReleaseMatches = array_filter($secondaryReleases->releases, function (Release $secondaryRelease) use ($release) {
+                        if (!empty($allSecondaryReleases)) {
+                            $secondaryReleaseMatches = array_filter($allSecondaryReleases, function (Release $secondaryRelease) use ($release) {
                                 $tagA = filter_var($release->tagName, FILTER_SANITIZE_NUMBER_INT);
                                 $tagB = filter_var($secondaryRelease->tagName, FILTER_SANITIZE_NUMBER_INT);
 
