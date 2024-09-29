@@ -104,7 +104,8 @@ class Releases
 
         // Check if the status code indicates an error
         if ($http_status >= 400) {
-            throw new Exception("HTTP error: $http_status. Response: $body");
+            Publish::message("<li class='warnings'>HTTP error: $http_status. Response: $body</li>");
+            $body = "[]";
         }
 
         Publish::loadingMessage("");

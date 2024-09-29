@@ -12,12 +12,12 @@ class Generic
      * @param bool $allowNow
      * @return string|null
      */
-    public static function convertToDateString(string $dateString, bool $allowNow = false): string
+    public static function convertToDateString(string|null $dateString, bool $allowNow = false): string
     {
-        $dateString = is_numeric($dateString) ? "@{$dateString}" : $dateString;
         if (!$dateString && !$allowNow) {
             return "";
         }
+        $dateString = is_numeric($dateString) ? "@{$dateString}" : $dateString;
         return (new DateTime($dateString))->setTimezone(new DateTimeZone('UTC'))->format('Y-m-d H:i:s') ?? "";
     }
 }
