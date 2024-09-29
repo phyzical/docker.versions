@@ -1,14 +1,23 @@
 $(document).ready(function () {
+    const addChangelogButton = function (element) {
+        const elementRef = $(element)
+        const updateButton = elementRef.children('[onclick*="updateContainer"]')
+        const changelogExists = elementRef.children('.changelog')
+        if (updateButton.length && elementRef.text().includes('update ready') && !changelogExists.length) {
+            const containerName = updateButton.attr("onclick").split("'")[1]
+            elementRef.prepend('<div class="changelog orange-text" style="display: inline-block; margin-right: 10px; cursor: pointer; color: #007bff;"><i class="fa fa-list fa-fw"></i>Change Log</div>');
+            elementRef.find('.changelog').first().on('click', () => showChangeLog(containerName));
+        }
+    }
     setTimeout(function () {
-        $('.updatecolumn:not(.folder-update)').each(function () {
-            const updateButton = $(this).children('[onclick*="updateContainer"]')
-            if (updateButton.length) {
-                const containerName = updateButton.attr("onclick").split("'")[1]
-                $(this).prepend('<div class="changelog orange-text" style="display: inline-block; margin-right: 10px; cursor: pointer; color: #007bff;"><i class="fa fa-list fa-fw"></i>Change Log</div>');
-                $(this).find('.changelog').first().on('click', () => showChangeLog(containerName));
-            }
-        });
+        $('.updatecolumn:not(.folder-update)').each(function () { addChangelogButton(this) });
     }, 1000)
+
+    // TODO: can we make it more majic ratehr than every 15 seconds?
+    // i.e updating a container removes the changelog button so we have to rerun
+    setInterval(function () {
+        $('.updatecolumn:not(.folder-update)').each(function () { addChangelogButton(this) });
+    }, 5000)
 })
 let changeLog_nchan
 function showChangeLog(container) {
