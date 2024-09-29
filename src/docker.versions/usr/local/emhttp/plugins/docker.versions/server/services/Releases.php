@@ -37,7 +37,7 @@ class Releases
      */
     public array $releases = [];
 
-    public const BETA_TAGS = ["night", "dev", "beta", "alpha", "test", "preview", "previous", "unstable", "rc"];
+    public const BETA_TAGS = ["night", "dev", "beta", "alpha", "preview", "previous", "unstable", "rc"];
 
 
     /**
@@ -139,12 +139,25 @@ class Releases
         ));
     }
 
+
+
+    /**
+     * Check if the tag is ignorable.
+     * @param string $tagName
+     * @return bool
+     */
+    private function isIgnorable(string $tagName): bool
+    {
+        return !empty($this->container->tagIgnorePrefixes) &&
+            preg_match("/" . implode("|", $this->container->tagIgnorePrefixes) . "/", $tagName);
+    }
+
     /**
      * Check if the tag is a pre-release.
      * @param string $tagName
      * @return bool
      */
-    private function isPreRelease(string $tagName): bool
+    static function isPreRelease(string $tagName): bool
     {
         return array_reduce(self::BETA_TAGS, function ($carry, $item) use ($tagName) {
             return $carry || str_contains($tagName, $item);
@@ -161,9 +174,15 @@ class Releases
         while (!empty($this->releases)) {
             // we pop items to save on memory
             $release = array_shift($this->releases);
+            // skip all ignoredPrefixes
+            if (
+                $this->isIgnorable($release->tagName)
+            ) {
+                continue;
+            }
             // skip all prereleases
             if (
-                $this->isPreRelease($release->tagName)
+                $release->preRelease && !$this->container->isPreRelease
             ) {
                 continue;
             }

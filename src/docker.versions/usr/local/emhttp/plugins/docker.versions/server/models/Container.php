@@ -4,9 +4,11 @@ namespace DockerVersions\Models;
 $documentRoot = $_SERVER['DOCUMENT_ROOT'] ?? '/usr/local/emhttp';
 require_once("$documentRoot/plugins/dynamix.docker.manager/include/DockerClient.php");
 require_once("$documentRoot/plugins/docker.versions/server/helpers/Publish.php");
+require_once("$documentRoot/plugins/docker.versions/server/helpers/Generic.php");
 
 use DockerVersions\Helpers\Publish;
 use DockerVersions\Helpers\Generic;
+use DockerVersions\Services\Releases;
 use DockerTemplates;
 
 class Container
@@ -16,6 +18,7 @@ class Container
         "created" => "org.opencontainers.image.created",
         "source" => "org.opencontainers.image.source",
         "secondarySource" => "docker.versions.source",
+        "tagIgnorePrefixes" => "docker.versions.tagIgnorePrefixes",
         "unraidManaged" => "net.unraid.docker.managed"
     ];
     public string $imageVersion;
@@ -24,6 +27,13 @@ class Container
     public string $containerCreatedDate;
     public string $repositorySource;
     public string $repositorySecondarySource;
+    /**
+     * array of tagIgnorePrefixes
+     * @var string[]
+     */
+    public array $tagIgnorePrefixes;
+    public bool $isPreRelease;
+
 
 
     public function __construct(
@@ -33,6 +43,8 @@ class Container
         $this->name = str_replace("/", "", $containerPayload['Names'][0]);
         $this->repositorySecondarySource = $containerPayload["Labels"][self::$LABELS["secondarySource"]] ?? "";
         $this->imageVersion = $containerPayload["Labels"][self::$LABELS["version"]] ?? "";
+        $this->isPreRelease = Releases::isPreRelease($containerPayload["Image"]) ?? false;
+        $this->tagIgnorePrefixes = array_filter(explode(",", $containerPayload["Labels"][self::$LABELS["tagIgnorePrefixes"]])) ?? [];
         $this->imageCreatedAt = Generic::convertToDateString($containerPayload["Labels"][self::$LABELS["created"]]) ?? "";
         $this->containerCreatedDate = Generic::convertToDateString($containerPayload["Created"]);
     }
