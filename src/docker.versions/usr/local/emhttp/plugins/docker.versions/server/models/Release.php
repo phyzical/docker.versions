@@ -1,6 +1,9 @@
 <?php
 namespace DockerVersions\Models;
 
+$documentRoot = $_SERVER['DOCUMENT_ROOT'] ?? '/usr/local/emhttp';
+require_once("$documentRoot/plugins/docker.versions/server/helpers/Generic.php");
+
 use Exception;
 
 use DockerVersions\Helpers\Generic;

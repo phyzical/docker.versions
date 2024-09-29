@@ -86,7 +86,7 @@ class Releases
         if (!empty($token)) {
             $headers[] = "Authorization: Bearer $token";
         } else {
-            Publish::message("<h3> WARNING: Without a github token you may find that this just stops working</h3>");
+            Publish::message("<li class='warnings'>Without a github token you may find that this just stops working</li>");
         }
         curl_setopt($ch, CURLOPT_HTTPHEADER, $headers);
         $body = curl_exec($ch);
@@ -209,10 +209,10 @@ class Releases
     {
         // if source is an md file
         if ($this->isChangelogUrl()) {
-            Publish::message("<p>Falling back to changelog for information for $this->repositorySource</p>");
+            Publish::message("<li class='warnings'>Falling back to changelog for information for $this->repositorySource</li>");
             $this->parseChangelogFile();
         } else {
-            Publish::message("<p>Falling back to last 30 tags for information for $this->repositorySource</p>");
+            Publish::message("<li class='warnings'>Falling back to last 30 tags for information for $this->repositorySource</li>");
             $this->pullTags();
         }
     }
@@ -279,7 +279,7 @@ class Releases
         );
 
         if (!$this->hasReleases()) {
-            Publish::message("<h3>WARNING: no changelogs found! (<a href=\"$releasesUrl\" target=\"blank\">Changelogs</a>)</h3>");
+            Publish::message("<li class='warnings'>No changelogs found! (<a href=\"$releasesUrl\" target=\"blank\">Changelogs</a>)</li>");
         }
     }
 
@@ -304,21 +304,18 @@ class Releases
 
         $this->releases = array_map(function ($release) {
             $tagName = $release->tag_name;
-            $isPrerelease = array_reduce(self::BETA_TAGS, function ($carry, $item) use ($tagName) {
-                return $carry || str_contains($tagName, $item);
-            }, false);
             return new Release(
                 "release",
                 $tagName,
                 $release->created_at,
                 $release->html_url,
                 $release->body ?? "No release notes sorry!",
-                $release->prerelease || $isPrerelease
+                $release->prerelease || $this->isPreRelease($tagName)
             );
         }, $releases);
 
         if (!$this->hasReleases()) {
-            Publish::message("<h3>WARNING: no releases found! (<a href=\"$releasesUrl\" target=\"blank\">Releases</a>)</h3>");
+            Publish::message("<li class='warnings'>No releases found! (<a href=\"$releasesUrl\" target=\"blank\">Releases</a>)</li>");
         }
     }
     /**
@@ -352,7 +349,7 @@ class Releases
         }, $tags);
 
         if (!$this->hasReleases()) {
-            Publish::message("<h3>WARNING: no tags found! (<a href=\"$tagsUrl\" target=\"blank\">Tags</a>)</h3>");
+            Publish::message("<li class='warnings'>No tags found! (<a href=\"$tagsUrl\" target=\"blank\">Tags</a>)</li>");
         }
     }
 }

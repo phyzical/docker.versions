@@ -22,7 +22,7 @@ class Publish
     public static function loadingMessage(string $message): void
     {
         if (empty($message)) {
-            $message = "\u{200B}";
+            $message = "Finished loading";
         }
         Publish::message("<p class='loadingInfo'>$message</p>");
     }

@@ -11,7 +11,7 @@ use DockerVersions\Services\Containers;
 use DockerVersions\Helpers\Publish;
 
 try {
-    Publish::message("<h3 class='loading'></h3>");
+    Publish::message("<h3 style='display: none' class='loading'></h3>");
     Containers::getChangeLogs($_GET["cts"]);
 } catch (Exception $e) {
     Publish::message("<h3>Error: {$e->getMessage()}</h3>");
