@@ -131,10 +131,11 @@ class Releases
 
     private function githubURL(): string
     {
-        $repositorySourceSegments = explode("/", $this->repositorySource);
+        $trimmedSource = str_replace("https://github.com/", "", $this->repositorySource);
+        $repositorySourceSegments = explode("/", $trimmedSource);
         return "https://api.github.com/repos/" . implode("/", array_slice(
             $repositorySourceSegments,
-            sizeof($repositorySourceSegments) - 2,
+            0,
             2
         ));
     }
