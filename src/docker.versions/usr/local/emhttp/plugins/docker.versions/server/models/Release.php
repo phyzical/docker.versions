@@ -3,6 +3,8 @@ namespace DockerVersions\Models;
 
 use Exception;
 
+use DockerVersions\Helpers\Generic;
+
 class Release
 {
     public const ALLOWED_TYPES = ['release', 'tag', 'changelog'];
@@ -44,7 +46,7 @@ class Release
         }
         $this->type = $type;
         $this->tagName = $tagName;
-        $this->createdAt = $createdAt;
+        $this->createdAt = Generic::convertToDateString($createdAt);
         $this->htmlUrl = $htmlUrl;
         $this->body = gzcompress($body);
         $this->preRelease = $preRelease;

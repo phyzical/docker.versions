@@ -6,9 +6,8 @@ require_once("$documentRoot/plugins/dynamix.docker.manager/include/DockerClient.
 require_once("$documentRoot/plugins/docker.versions/server/helpers/Publish.php");
 
 use DockerVersions\Helpers\Publish;
+use DockerVersions\Helpers\Generic;
 use DockerTemplates;
-use DateTime;
-use DateTimeZone;
 
 class Container
 {
@@ -34,9 +33,8 @@ class Container
         $this->name = str_replace("/", "", $containerPayload['Names'][0]);
         $this->repositorySecondarySource = $containerPayload["Labels"][self::$LABELS["secondarySource"]] ?? "";
         $this->imageVersion = $containerPayload["Labels"][self::$LABELS["version"]] ?? "";
-        $this->imageCreatedAt = $containerPayload["Labels"][self::$LABELS["created"]] ?? "";
-        $createdDate = $containerPayload["Created"];
-        $this->containerCreatedDate = (new DateTime("@{$createdDate}"))->setTimezone(new DateTimeZone('UTC'))->format('Y-m-d\TH:i:s.v\Z') ?? "";
+        $this->imageCreatedAt = Generic::convertToDateString($containerPayload["Labels"][self::$LABELS["created"]]) ?? "";
+        $this->containerCreatedDate = Generic::convertToDateString($containerPayload["Created"]);
     }
 
     /**

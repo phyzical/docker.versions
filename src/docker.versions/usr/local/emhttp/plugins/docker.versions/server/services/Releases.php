@@ -11,7 +11,6 @@ use DockerVersions\Config\GithubToken;
 use DockerVersions\Models\Release;
 use DockerVersions\Models\Container;
 use DockerVersions\Helpers\Publish;
-use DateTime;
 
 class Releases
 {
@@ -250,9 +249,7 @@ class Releases
                 $date = reset($dates);
 
                 if (!$date) {
-                    return;
-                } else {
-                    $date = (new DateTime("@" . strtotime($date)))->setTimezone(new DateTimeZone('UTC'))->format('Y-m-d\TH:i:s.v\Z');
+                    return false;
                 }
 
                 // remove any date like strings

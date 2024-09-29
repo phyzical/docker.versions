@@ -13,7 +13,6 @@ use DockerVersions\Services\Releases;
 use DockerVersions\Models\Release;
 use DockerVersions\Helpers\Publish;
 use DockerClient;
-use DateTime;
 
 class Containers
 {
@@ -108,14 +107,12 @@ class Containers
 
                 if (!empty($allReleases)) {
                     if (!$currentImageCreatedAt) {
-                        Publish::message("<p>Falling back to displaying all " . $firstRelease->type . "s</p>");
-                        $currentImageCreatedAt = (new DateTime($lastRelease->createdAt))->format('Y-m-d H:i:s');
+                        Publish::message("<p>No org.opencontainers.image.created, Falling back to displaying all " . $firstRelease->type . "s</p>");
+                        $currentImageCreatedAt = $lastRelease->createdAt;
                         $currentImageSourceTag = $lastRelease->tagName;
-                    } else {
-                        $currentImageCreatedAt = (new DateTime($currentImageCreatedAt))->format('Y-m-d H:i:s');
                     }
 
-                    $latestImageCreatedAt = (new DateTime($firstRelease->createdAt))->format('Y-m-d H:i:s');
+                    $latestImageCreatedAt = $firstRelease->createdAt;
 
                     Publish::message("<h3>Container: $container->name</h3>");
                     Publish::message("<h3>$currentImageSourceTag ($currentImageCreatedAt) ---->  {$firstRelease->tagName} ({$latestImageCreatedAt})</h3>");
@@ -132,14 +129,14 @@ class Containers
                             continue;
                         }
                         Publish::message("<hr><h3 class='releasesInfo'>Primary Source</h3>");
-                        Publish::message("<a class='releasesInfo' target=\"blank\" href=\"{$release->htmlUrl}\">{$release->tagName} ($releaseCreatedAt)</a><br><br>");
+                        Publish::message("<a class='releasesInfo' target=\"blank\" href=\"{$release->htmlUrl}\">{$release->tagName} ($release->createdAt)</a><br><br>");
                         if (!empty($release->extraReleases)) {
                             Publish::message("<h3 class='releasesInfo'>Duplicate changelogs</h3>");
                         }
                         foreach ($release->extraReleases as $extraRelease) {
                             if (strtotime($extraRelease->createdAt) > strtotime($currentImageCreatedAt) && $extraRelease->tagName != $currentImageSourceTag) {
                                 Publish::message("<a class='releasesInfo' target=\"blank\" href=\"{$extraRelease->htmlUrl}\">{$extraRelease->tagName} (" .
-                                    (new DateTime($extraRelease->createdAt))->format('Y-m-d H:i:s') . ")</a><br><br>");
+                                    $extraRelease->createdAt . ")</a><br><br>");
                             }
                         }
                         Publish::message("<div class='releasesInfo'>{$release->getBody()}</div><br>");
@@ -163,10 +160,10 @@ class Containers
                                 }
                                 foreach ($secondaryRelease->extraReleases as $extraRelease) {
                                     Publish::message("<a class='releasesInfo' target=\"blank\" href=\"{$extraRelease->htmlUrl}\">{$extraRelease->tagName} (" .
-                                        (new DateTime($extraRelease->createdAt))->format('Y-m-d H:i:s') . ")</a><br><br>");
+                                        $extraRelease->createdAt . ")</a><br><br>");
                                 }
                                 Publish::message("<a class='releasesInfo' target=\"blank\" href=\"{$secondaryRelease->htmlUrl}\">{$secondaryRelease->tagName} (" .
-                                    (new DateTime($secondaryRelease->createdAt))->format('Y-m-d H:i:s') . ")</a><br><br>");
+                                    $secondaryRelease->createdAt . ")</a><br><br>");
                                 Publish::message("<div class='releasesInfo'>{$secondaryRelease->getBody()}</div><br>");
                             }
                         }
