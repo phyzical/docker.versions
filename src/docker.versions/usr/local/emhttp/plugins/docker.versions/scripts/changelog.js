@@ -29,6 +29,7 @@ function showChangeLog(container) {
 
 function popup(title, url) {
     $('#iframe-popup').html('<iframe id="myIframe" frameborder="0" scrolling="yes" width="100%" height="99%"></iframe>');
+    $('#myIframe')[0].contentDocument = '';
 
     // Append HTML into an element within the iframe
 
@@ -37,8 +38,13 @@ function popup(title, url) {
         changeLog_nchan.on('message', function (data) {
             const iframeDocument = $('#myIframe')[0].contentDocument
             if (data.includes("class='loadingInfo'")) {
+                $(iframeDocument).find('.loading').css('display', 'block');
                 $(iframeDocument).find('.loading').html(data);
+            } else if (data.includes("class='warnings'")) {
+                $(iframeDocument).find('.warningsInfo').css('display', 'block');
+                $(iframeDocument).find('.warningsInfo ul').append(data);
             } else if (data.includes("class='releasesInfo'")) {
+                $(iframeDocument).find('.releases').css('display', 'block');
                 $(iframeDocument).find('.releases').append(data);
             } else {
                 const box = $(iframeDocument).find('body')
