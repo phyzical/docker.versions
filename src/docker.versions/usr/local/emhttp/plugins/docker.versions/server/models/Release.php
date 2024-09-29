@@ -1,11 +1,16 @@
 <?php
 namespace DockerVersions\Models;
 
+$documentRoot = $_SERVER['DOCUMENT_ROOT'] ?? '/usr/local/emhttp';
+require_once("$documentRoot/plugins/docker.versions/server/helpers/Generic.php");
+
 use Exception;
+
+use DockerVersions\Helpers\Generic;
 
 class Release
 {
-    public const ALLOWED_TYPES = ['release', 'tag'];
+    public const ALLOWED_TYPES = ['release', 'tag', 'changelog'];
     public string $type;
     public string $tagName;
 
@@ -40,11 +45,11 @@ class Release
         bool $preRelease
     ) {
         if (!in_array($type, self::ALLOWED_TYPES)) {
-            throw new Exception("Invalid type: $type. Allowed types are 'release' or 'tag'.");
+            throw new Exception("Invalid type: $type. Allowed types are 'release', 'tag' or 'changelog'.");
         }
         $this->type = $type;
         $this->tagName = $tagName;
-        $this->createdAt = $createdAt;
+        $this->createdAt = Generic::convertToDateString($createdAt);
         $this->htmlUrl = $htmlUrl;
         $this->body = gzcompress($body);
         $this->preRelease = $preRelease;

@@ -1,17 +1,16 @@
 <?xml version="1.0" standalone="yes"?>
 <!DOCTYPE PLUGIN [
     <!ENTITY name "docker.versions">
-    <!ENTITY author "phyzical">
-    <!ENTITY github "&author;/&name;">
-    <!ENTITY launch "Settings/docker.versions">
-    <!ENTITY plugdir "/usr/local/emhttp/plugins/&name;">
-    <!ENTITY pluginURL "https://raw.githubusercontent.com/&github;/main/&name;.plg">
-    <!ENTITY version "2024.08.31">
-    <!ENTITY md5 "7989b4e21476718f7f84035785d8b830">
+<!ENTITY author "phyzical">
+<!ENTITY github "&author;/&name;">
+<!ENTITY launch "Settings/docker.versions">
+<!ENTITY plugdir "/usr/local/emhttp/plugins/&name;">
+<!ENTITY pluginURL "https://raw.githubusercontent.com/&github;/main/&name;.plg">
+<!ENTITY version "2024.09.29">
+<!ENTITY md5 "3d8290382ce3ac85920771fc8b8c4977">
 ]>
 
-<PLUGIN name="&name;" author="&author;" version="&version;" launch="&launch;"
-    pluginURL="&pluginURL;" min="6.12.3">
+<PLUGIN name="&name;" author="&author;" version="&version;" launch="&launch;" pluginURL="&pluginURL;" min="6.12.3">
     <CHANGES>
         ###2024.07.24
         - Initial Release
@@ -28,10 +27,24 @@
         ###2024.08.31
         - Skip pre-release versions
         - Remove current image from changelogs
-        - Added logic to provide a secondary source of `docker.versions.source` to fall back to or use to add additional changelog information where a match is found by date or name
+        - Added logic to provide a secondary source of `docker.versions.source` to fall back to or
+        use to add additional changelog information where a match is found by date or name
         - Added logic to try and group releases together where the changelogs are the same
         - Added logic to show loading text when requests are made to avoid it looking broken
-        - 
+        ###2024.09.29
+        - Added new label `docker.versions.tagIgnorePrefixes` to be able to ignore certain tags per container 
+        - Refactored the `addChangelogButton` function to improve readability and maintainability, and added an interval to refresh changelog buttons every 5 seconds in `changelog.js`.
+        - Updated the `popup` function to handle different types of messages and display them appropriately in the iframe.
+        - Changed the `loading` message in `GetChangelog.php` to be hidden by default.
+        - Improved warning messages and fallback mechanisms in the `getRepositorySource` and `getChangeLogs` methods in `Container.php` and `Containers.php` respectively. 
+        - Added a new `Generic` helper class to handle date conversions in `Generic.php` and utilized it in `Container.php` and `Release.php`.
+        - Included the `Generic` helper class in relevant files to support new utility functions. 
+        - Changed the default message in `loadingMessage` function in `Publish.php` to "Finished loading".
+        - imporoved the ui of changelogs with collapse able sections 
+        - use the container created if no OC created, fallback to 6 months if no matches then all if non after that
+        - reworked how the github url is parsed instead of assuming a specific format 
+        - added support for changelog files for extacting changes from the source
+
     </CHANGES>
 
     <!-- New source file -->
@@ -46,7 +59,7 @@
             mkdir -p /boot/config/plugins/&name;/styles
             mkdir -p /boot/config/plugins/&name;/scripts
             rm -f $(ls /boot/config/plugins/&name;/&name;*.txz | grep -v '&version;')
-            echo "&version;" > /boot/config/plugins/&name;/version
+            echo "&version;"> /boot/config/plugins/&name;/version
             echo ""
             echo "----------------------------------------------------"
             echo " &name; has been installed."

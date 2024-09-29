@@ -11,13 +11,12 @@ use DockerVersions\Config\GithubToken;
 use DockerVersions\Models\Release;
 use DockerVersions\Models\Container;
 use DockerVersions\Helpers\Publish;
-use DateTime;
 
 class Releases
 {
     public string $repositorySource;
     public string $releasesUrl;
-    const perPage = "30";
+    const perPage = "100";
 
     public Container $container;
 
@@ -38,7 +37,7 @@ class Releases
      */
     public array $releases = [];
 
-    public const BETA_TAGS = ["night", "dev", "beta", "alpha", "test"];
+    public const BETA_TAGS = ["night", "dev", "beta", "alpha", "preview", "previous", "unstable", "rc"];
 
 
     /**
@@ -74,7 +73,7 @@ class Releases
      * @param string $url
      * @return array
      */
-    function makeReq(string $url, string $secondaryMessage = null): array|object
+    function makeReq(string $url, string $secondaryMessage = null): array|object|string
     {
         Publish::loadingMessage("Loading " . ($secondaryMessage ?? $url));
         $ch = getCurlHandle($url, 'GET');
@@ -87,7 +86,7 @@ class Releases
         if (!empty($token)) {
             $headers[] = "Authorization: Bearer $token";
         } else {
-            Publish::message("<h3> WARNING: Without a github token you may find that this just stops working</h3>");
+            Publish::message("<li class='warnings'>Without a github token you may find that this just stops working</li>");
         }
         curl_setopt($ch, CURLOPT_HTTPHEADER, $headers);
         $body = curl_exec($ch);
@@ -110,8 +109,7 @@ class Releases
 
         Publish::loadingMessage("");
 
-
-        return json_decode($body);
+        return json_decode($body) ?? $body;
     }
 
     /**
@@ -132,12 +130,26 @@ class Releases
 
     private function githubURL(): string
     {
-        $repositorySourceSegments = explode("/", $this->repositorySource);
+        $trimmedSource = str_replace("https://github.com/", "", $this->repositorySource);
+        $repositorySourceSegments = explode("/", $trimmedSource);
         return "https://api.github.com/repos/" . implode("/", array_slice(
             $repositorySourceSegments,
-            sizeof($repositorySourceSegments) - 2,
+            0,
             2
         ));
+    }
+
+
+
+    /**
+     * Check if the tag is ignorable.
+     * @param string $tagName
+     * @return bool
+     */
+    private function isIgnorable(string $tagName): bool
+    {
+        return !empty($this->container->tagIgnorePrefixes) &&
+            preg_match("/" . implode("|", $this->container->tagIgnorePrefixes) . "/", $tagName);
     }
 
     /**
@@ -145,7 +157,7 @@ class Releases
      * @param string $tagName
      * @return bool
      */
-    private function isPreRelease(string $tagName): bool
+    static function isPreRelease(string $tagName): bool
     {
         return array_reduce(self::BETA_TAGS, function ($carry, $item) use ($tagName) {
             return $carry || str_contains($tagName, $item);
@@ -162,9 +174,15 @@ class Releases
         while (!empty($this->releases)) {
             // we pop items to save on memory
             $release = array_shift($this->releases);
+            // skip all ignoredPrefixes
+            if (
+                $this->isIgnorable($release->tagName)
+            ) {
+                continue;
+            }
             // skip all prereleases
             if (
-                $this->isPreRelease($release->tagName)
+                $release->preRelease && !$this->container->isPreRelease
             ) {
                 continue;
             }
@@ -194,10 +212,115 @@ class Releases
     }
 
     /**
+     * Check if the repository source is a changelog URL.
+     * @return bool
+     */
+
+    function isChangelogUrl(): bool
+    {
+        return str_contains($this->repositorySource, ".md") || str_contains(strtolower($this->repositorySource), "changelog");
+    }
+
+    /**
+     * Handle the fallback releases.
+     */
+    function pullFallbackReleases(): void
+    {
+        // if source is an md file
+        if ($this->isChangelogUrl()) {
+            Publish::message("<li class='warnings'>Falling back to changelog for information for $this->repositorySource</li>");
+            $this->parseChangelogFile();
+        } else {
+            Publish::message("<li class='warnings'>Falling back to last 30 tags for information for $this->repositorySource</li>");
+            $this->pullTags();
+        }
+    }
+
+    /**
+     * Parse the changelog file.
+     */
+    function parseChangelogFile(): void
+    {
+        //replace github.com with raw.githubusercontent.com and replace blob with refs/heads
+        $releasesUrl = str_replace(
+            ["github.com", "blob"],
+            ["raw.githubusercontent.com", "refs/heads"],
+            $this->repositorySource
+        );
+
+        $this->releasesUrl = $releasesUrl;
+        $changelogString = $this->makeReq($releasesUrl);
+        $changelogLines = explode("\n", $changelogString);
+
+        // split into chunks by lines that contain 1 to many # and a date string
+        // (\d{4}[-\/]\d{2}[-\/]\d{2}): Matches YYYY-MM-DD or YYYY/MM/DD.
+        // (\d{2}[-\/]\d{2}[-\/]\d{4}): Matches MM-DD-YYYY or MM/DD/YYYY.
+        // (\d{4}[-\/]\d{1,2}[-\/]\d{1,2}): Matches YYYY-M-D or YYYY/M/D.
+        // (\d{1,2}[-\/]\d{1,2}[-\/]\d{4}): Matches D-M-YYYY or D/M/YYYY.
+        // ([A-Za-z]{3} [A-Za-z]{3} \d{1,2}(st|nd|rd|th)?,? \d{4}):  Matches Mon Jan 15th 2024 or similar.
+        $dateRegex = "/(\d{4}[-\/]\d{2}[-\/]\d{2})|(\d{2}[-\/]\d{2}[-\/]\d{4})|(\d{4}[-\/]\d{1,2}[-\/]\d{1,2})|(\d{1,2}[-\/]\d{1,2}[-\/]\d{4})|([A-Za-z]{3} [A-Za-z]{3} \d{1,2}(st|nd|rd|th)?,? \d{4})/";
+
+        // for each line matching the date regex get the following line until the next date regex
+        $groupedChangeLogs = [];
+        $currentContent = "";
+        foreach ($changelogLines as $line) {
+            if (preg_match($dateRegex, $line)) {
+                $groupedChangeLogs[] = $currentContent;
+                $currentContent = $line;
+            } else {
+                $currentContent = "$currentContent\n$line";
+            }
+        }
+
+        $this->releases = array_filter(
+            array_map(function ($changelog) use ($releasesUrl, $dateRegex) {
+                $body = explode("\n", $changelog);
+                $title = array_shift($body);
+                $body = implode("\n", $body);
+
+                // find the first string that looks like a date string
+                preg_match($dateRegex, $title, $dates);
+
+                $date = reset($dates);
+
+                if (!$date) {
+                    return false;
+                }
+
+                // remove any date like strings
+                $tag = trim(
+                    str_replace(
+                        ["[", "]", "(", ")", "*", "-", "#", $date, "<", ">"],
+                        "",
+                        $title
+                    )
+                );
+
+                return new Release(
+                    "changelog",
+                    $tag,
+                    $date,
+                    $releasesUrl,
+                    $body,
+                    // We have no way of detecting this for a tag
+                    false
+                );
+            }, $groupedChangeLogs)
+        );
+
+        if (!$this->hasReleases()) {
+            Publish::message("<li class='warnings'>No changelogs found! (<a href=\"$releasesUrl\" target=\"blank\">Changelogs</a>)</li>");
+        }
+    }
+
+    /**
      * Pull releases from the github API.
      */
     function pullReleases(): void
     {
+        if ($this->isChangelogUrl()) {
+            return;
+        }
         $releasesUrl = $this->githubURL() . "/releases?per_page=" . self::perPage;
         $this->releasesUrl = $releasesUrl;
 
@@ -211,21 +334,18 @@ class Releases
 
         $this->releases = array_map(function ($release) {
             $tagName = $release->tag_name;
-            $isPrerelease = array_reduce(self::BETA_TAGS, function ($carry, $item) use ($tagName) {
-                return $carry || str_contains($tagName, $item);
-            }, false);
             return new Release(
                 "release",
                 $tagName,
                 $release->created_at,
                 $release->html_url,
-                $release->body,
-                $release->prerelease || $isPrerelease
+                $release->body ?? "No release notes sorry!",
+                $release->prerelease || $this->isPreRelease($tagName)
             );
         }, $releases);
 
         if (!$this->hasReleases()) {
-            Publish::message("<h3>WARNING: no releases found! (<a href=\"$releasesUrl\" target=\"blank\">Releases</a>)</h3>");
+            Publish::message("<li class='warnings'>No releases found! (<a href=\"$releasesUrl\" target=\"blank\">Releases</a>)</li>");
         }
     }
     /**
@@ -259,7 +379,7 @@ class Releases
         }, $tags);
 
         if (!$this->hasReleases()) {
-            Publish::message("<h3>WARNING: no tags found! (<a href=\"$tagsUrl\" target=\"blank\">Tags</a>)</h3>");
+            Publish::message("<li class='warnings'>No tags found! (<a href=\"$tagsUrl\" target=\"blank\">Tags</a>)</li>");
         }
     }
 }
