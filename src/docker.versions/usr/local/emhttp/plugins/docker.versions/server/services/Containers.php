@@ -145,9 +145,34 @@ class Containers
                             $secondaryReleaseMatches = array_filter($allSecondaryReleases, function (Release $secondaryRelease) use ($release) {
                                 $tagA = filter_var($release->tagName, FILTER_SANITIZE_NUMBER_INT);
                                 $tagB = filter_var($secondaryRelease->tagName, FILTER_SANITIZE_NUMBER_INT);
+                                $tagsAreClose = str_contains($tagA, $tagB) || str_contains($tagB, $tagA);
 
-                                return str_contains($tagA, $tagB) || str_contains($tagB, $tagA) ||
-                                    (abs(strtotime($release->createdAt) - strtotime($secondaryRelease->createdAt)) < (60 * 60 * 6));
+                                $allDates = [
+                                    ...array_map(
+                                        function ($extraRelease) {
+                                            return $extraRelease->createdAt;
+                                        },
+                                        $release->extraReleases
+                                    ),
+                                    $release->createdAt
+                                ];
+
+                                $within7daysMatch = !empty(array_filter(
+                                    $allDates,
+                                    function ($createdAt) use ($secondaryRelease) {
+                                        return abs((strtotime($createdAt) - strtotime($secondaryRelease->createdAt))) < (60 * 60 * 24 * 7);
+                                    }
+                                ));
+
+                                $within2daysMatch = !empty(array_filter(
+                                    $allDates,
+                                    function ($createdAt) use ($secondaryRelease) {
+                                        return abs((strtotime($createdAt) - strtotime($secondaryRelease->createdAt))) < (60 * 60 * 24 * 2);
+                                    }
+                                ));
+
+                                // Titles are close and within 7 days and not the same release or within 2 days 
+                                return ($tagsAreClose && $within7daysMatch) || $within2daysMatch;
                             });
 
                             if (!empty($secondaryReleaseMatches)) {
