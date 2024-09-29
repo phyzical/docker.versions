@@ -126,12 +126,12 @@ class Containers
                     }
 
                     Publish::message('<pre class="releases" style="overflow-y: scroll; height:400px; border: 2px solid #000; padding: 10px;border-radius: 5px;background-color: #f9f9f9; "></pre>');
-
+                    $allReleases = array_filter($allReleases, function ($release) use ($currentImageCreatedAt) {
+                        return strtotime($currentImageCreatedAt) < strtotime($release->createdAt);
+                    });
+                    // TODO: if all releases is empty then fallback to showing everything, as there is an update so something went wrong date wise
+                    // i.e the container created is too fresh maybe fallback to last 6 months?
                     foreach ($allReleases as $release) {
-                        $releaseCreatedAt = (new DateTime($release->createdAt))->format('Y-m-d H:i:s');
-                        if (strtotime($currentImageCreatedAt) >= strtotime($releaseCreatedAt)) {
-                            continue;
-                        }
                         Publish::message("<hr><h3 class='releasesInfo'>Primary Source</h3>");
                         Publish::message("<a class='releasesInfo' target=\"blank\" href=\"{$release->htmlUrl}\">{$release->tagName} ($release->createdAt)</a><br><br>");
                         if (!empty($release->extraReleases)) {
