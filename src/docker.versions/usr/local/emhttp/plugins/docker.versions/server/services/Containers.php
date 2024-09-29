@@ -83,6 +83,23 @@ class Containers
 
                 $releases->organiseReleases();
 
+                $firstRelease = null;
+                $lastRelease = null;
+                $allReleases = [];
+                $releasesUrl = "";
+                $allSecondaryReleases = [];
+
+                if ($releases->hasReleases()) {
+                    $firstRelease = $releases->first();
+                    $lastRelease = $releases->last();
+                    $allReleases = $releases->releases;
+                    $releasesUrl = $releases->releasesUrl;
+                }
+
+                if ($secondaryReleases->hasReleases()) {
+                    $allSecondaryReleases = $secondaryReleases->releases;
+                }
+
                 if (!$releases->hasReleases() && (!$secondaryReleases || !$secondaryReleases->hasReleases())) {
                     Publish::message("<li class='warnings'>Error no releases found!</li>");
                     Publish::message("<li class='warnings'><a href=\"$releases->releasesUrl\" target=\"blank\">$releases->releasesUrl</a></li>");
@@ -92,11 +109,6 @@ class Containers
                     continue;
                 }
 
-                $firstRelease = $releases->first();
-                $lastRelease = $releases->last();
-                $releasesUrl = $releases->releasesUrl;
-                $allReleases = $releases->releases;
-                $allSecondaryReleases = $secondaryReleases->releases;
                 // If no primary found make secondary primary
                 if (!$releases->hasReleases() && $secondaryReleases && $secondaryReleases->hasReleases()) {
                     Publish::message("<li class='warnings'>No primary source releases found, falling back to secondary</li>");

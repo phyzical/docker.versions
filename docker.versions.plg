@@ -6,8 +6,8 @@
 <!ENTITY launch "Settings/docker.versions">
 <!ENTITY plugdir "/usr/local/emhttp/plugins/&name;">
 <!ENTITY pluginURL "https://raw.githubusercontent.com/&github;/main/&name;.plg">
-<!ENTITY version "2024.09.29">
-<!ENTITY md5 "3d8290382ce3ac85920771fc8b8c4977">
+<!ENTITY version "2024.09.30">
+<!ENTITY md5 "8abedecafe36770084805cf6ec9ebf3e">
 ]>
 
 <PLUGIN name="&name;" author="&author;" version="&version;" launch="&launch;" pluginURL="&pluginURL;" min="6.12.3">
@@ -44,6 +44,9 @@
         - use the container created if no OC created, fallback to 6 months if no matches then all if non after that
         - reworked how the github url is parsed instead of assuming a specific format 
         - added support for changelog files for extacting changes from the source
+        ###2024.09.30
+        - Fix regression around missing open containers image date
+        - Fix fallback to secondary when primary source is missing
 
     </CHANGES>
 
