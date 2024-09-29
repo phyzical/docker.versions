@@ -38,7 +38,7 @@ class Releases
      */
     public array $releases = [];
 
-    public const BETA_TAGS = ["night", "dev", "beta", "alpha", "test"];
+    public const BETA_TAGS = ["night", "dev", "beta", "alpha", "test", "preview", "previous", "unstable", "rc"];
 
 
     /**
