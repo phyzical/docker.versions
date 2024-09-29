@@ -241,29 +241,45 @@ class Releases
      */
     function parseChangelogFile(): void
     {
-        $releasesUrl = $this->repositorySource;
+        //replace github.com with raw.githubusercontent.com and replace blob with refs/heads
+        $releasesUrl = str_replace(
+            ["github.com", "blob"],
+            ["raw.githubusercontent.com", "refs/heads"],
+            $this->repositorySource
+        );
+
         $this->releasesUrl = $releasesUrl;
         $changelogString = $this->makeReq($releasesUrl);
-        // split into chunks by lines that contain 1 to many # and a date string
-        $splitChangelogs = preg_split('/(#+.*\d{4}-\d{2}-\d{2})/', $changelogString, -1, PREG_SPLIT_DELIM_CAPTURE | PREG_SPLIT_NO_EMPTY);
+        $changelogLines = explode("\n", $changelogString);
 
-        // Combine the split parts to include the delimiter
-        $changelogs = [];
-        for ($i = 0; $i < count($splitChangelogs); $i += 2) {
-            $changelogs[] = ($splitChangelogs[$i + 1] ?? '') . $splitChangelogs[$i + 2];
+        // split into chunks by lines that contain 1 to many # and a date string
+        // (\d{4}[-\/]\d{2}[-\/]\d{2}): Matches YYYY-MM-DD or YYYY/MM/DD.
+        // (\d{2}[-\/]\d{2}[-\/]\d{4}): Matches MM-DD-YYYY or MM/DD/YYYY.
+        // (\d{4}[-\/]\d{1,2}[-\/]\d{1,2}): Matches YYYY-M-D or YYYY/M/D.
+        // (\d{1,2}[-\/]\d{1,2}[-\/]\d{4}): Matches D-M-YYYY or D/M/YYYY.
+        // ([A-Za-z]{3} [A-Za-z]{3} \d{1,2}(st|nd|rd|th)?,? \d{4}):  Matches Mon Jan 15th 2024 or similar.
+        $dateRegex = "/(\d{4}[-\/]\d{2}[-\/]\d{2})|(\d{2}[-\/]\d{2}[-\/]\d{4})|(\d{4}[-\/]\d{1,2}[-\/]\d{1,2})|(\d{1,2}[-\/]\d{1,2}[-\/]\d{4})|([A-Za-z]{3} [A-Za-z]{3} \d{1,2}(st|nd|rd|th)?,? \d{4})/";
+
+        // for each line matching the date regex get the following line until the next date regex
+        $groupedChangeLogs = [];
+        $currentContent = "";
+        foreach ($changelogLines as $line) {
+            if (preg_match($dateRegex, $line)) {
+                $groupedChangeLogs[] = $currentContent;
+                $currentContent = $line;
+            } else {
+                $currentContent = "$currentContent\n$line";
+            }
         }
 
         $this->releases = array_filter(
-            array_map(function ($changelog) use ($releasesUrl) {
+            array_map(function ($changelog) use ($releasesUrl, $dateRegex) {
                 $body = explode("\n", $changelog);
                 $title = array_shift($body);
                 $body = implode("\n", $body);
 
-                $titleSegments = explode(" ", trim(preg_replace('/#/', '', $title)));
                 // find the first string that looks like a date string
-                $dates = array_filter($titleSegments, function ($item) {
-                    return strtotime($item);
-                });
+                preg_match($dateRegex, $title, $dates);
 
                 $date = reset($dates);
 
@@ -272,16 +288,11 @@ class Releases
                 }
 
                 // remove any date like strings
-                $tag = str_replace(
-                    ["[", "]", "(", ")"],
-                    "",
-                    trim(
-                        implode(
-                            " ",
-                            array_filter($titleSegments, function ($item) {
-                            return !strtotime($item);
-                        })
-                        )
+                $tag = trim(
+                    str_replace(
+                        ["[", "]", "(", ")", "*", "-", "#", $date, "<", ">"],
+                        "",
+                        $title
                     )
                 );
 
@@ -294,7 +305,7 @@ class Releases
                     // We have no way of detecting this for a tag
                     false
                 );
-            }, $changelogs)
+            }, $groupedChangeLogs)
         );
 
         if (!$this->hasReleases()) {
