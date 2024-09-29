@@ -5,7 +5,7 @@ use Exception;
 
 class Release
 {
-    public const ALLOWED_TYPES = ['release', 'tag'];
+    public const ALLOWED_TYPES = ['release', 'tag', 'changelog'];
     public string $type;
     public string $tagName;
 
@@ -40,7 +40,7 @@ class Release
         bool $preRelease
     ) {
         if (!in_array($type, self::ALLOWED_TYPES)) {
-            throw new Exception("Invalid type: $type. Allowed types are 'release' or 'tag'.");
+            throw new Exception("Invalid type: $type. Allowed types are 'release', 'tag' or 'changelog'.");
         }
         $this->type = $type;
         $this->tagName = $tagName;

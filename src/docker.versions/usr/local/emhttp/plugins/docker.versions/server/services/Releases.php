@@ -17,7 +17,7 @@ class Releases
 {
     public string $repositorySource;
     public string $releasesUrl;
-    const perPage = "30";
+    const perPage = "100";
 
     public Container $container;
 
@@ -74,7 +74,7 @@ class Releases
      * @param string $url
      * @return array
      */
-    function makeReq(string $url, string $secondaryMessage = null): array|object
+    function makeReq(string $url, string $secondaryMessage = null): array|object|string
     {
         Publish::loadingMessage("Loading " . ($secondaryMessage ?? $url));
         $ch = getCurlHandle($url, 'GET');
@@ -110,8 +110,7 @@ class Releases
 
         Publish::loadingMessage("");
 
-
-        return json_decode($body);
+        return json_decode($body) ?? $body;
     }
 
     /**
@@ -194,10 +193,106 @@ class Releases
     }
 
     /**
+     * Check if the repository source is a changelog URL.
+     * @return bool
+     */
+
+    function isChangelogUrl(): bool
+    {
+        return str_contains($this->repositorySource, ".md");
+    }
+
+    /**
+     * Handle the fallback releases.
+     */
+    function pullFallbackReleases(): void
+    {
+        // if source is an md file
+        if ($this->isChangelogUrl()) {
+            Publish::message("<p>Falling back to changelog for information for $this->repositorySource</p>");
+            $this->parseChangelogFile();
+        } else {
+            Publish::message("<p>Falling back to last 30 tags for information for $this->repositorySource</p>");
+            $this->pullTags();
+        }
+    }
+
+    /**
+     * Parse the changelog file.
+     */
+    function parseChangelogFile(): void
+    {
+        $releasesUrl = $this->repositorySource;
+        $this->releasesUrl = $releasesUrl;
+        $changelogString = $this->makeReq($releasesUrl);
+        // split into chunks by lines that contain 1 to many # and a date string
+        $splitChangelogs = preg_split('/(#+.*\d{4}-\d{2}-\d{2})/', $changelogString, -1, PREG_SPLIT_DELIM_CAPTURE | PREG_SPLIT_NO_EMPTY);
+
+        // Combine the split parts to include the delimiter
+        $changelogs = [];
+        for ($i = 0; $i < count($splitChangelogs); $i += 2) {
+            $changelogs[] = ($splitChangelogs[$i + 1] ?? '') . $splitChangelogs[$i + 2];
+        }
+
+        $this->releases = array_filter(
+            array_map(function ($changelog) use ($releasesUrl) {
+                $body = explode("\n", $changelog);
+                $title = array_shift($body);
+                $body = implode("\n", $body);
+
+                $titleSegments = explode(" ", trim(preg_replace('/#/', '', $title)));
+                // find the first string that looks like a date string
+                $dates = array_filter($titleSegments, function ($item) {
+                    return strtotime($item);
+                });
+
+                $date = reset($dates);
+
+                if (!$date) {
+                    return;
+                } else {
+                    $date = (new DateTime("@" . strtotime($date)))->setTimezone(new DateTimeZone('UTC'))->format('Y-m-d\TH:i:s.v\Z');
+                }
+
+                // remove any date like strings
+                $tag = str_replace(
+                    ["[", "]", "(", ")"],
+                    "",
+                    trim(
+                        implode(
+                            " ",
+                            array_filter($titleSegments, function ($item) {
+                            return !strtotime($item);
+                        })
+                        )
+                    )
+                );
+
+                return new Release(
+                    "changelog",
+                    $tag,
+                    $date,
+                    $releasesUrl,
+                    $body,
+                    // We have no way of detecting this for a tag
+                    false
+                );
+            }, $changelogs)
+        );
+
+        if (!$this->hasReleases()) {
+            Publish::message("<h3>WARNING: no changelogs found! (<a href=\"$releasesUrl\" target=\"blank\">Changelogs</a>)</h3>");
+        }
+    }
+
+    /**
      * Pull releases from the github API.
      */
     function pullReleases(): void
     {
+        if ($this->isChangelogUrl()) {
+            return;
+        }
         $releasesUrl = $this->githubURL() . "/releases?per_page=" . self::perPage;
         $this->releasesUrl = $releasesUrl;
 
@@ -219,7 +314,7 @@ class Releases
                 $tagName,
                 $release->created_at,
                 $release->html_url,
-                $release->body,
+                $release->body ?? "No release notes sorry!",
                 $release->prerelease || $isPrerelease
             );
         }, $releases);

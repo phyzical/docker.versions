@@ -26,6 +26,8 @@ class Containers
     {
         $dockerClient = new DockerClient();
 
+        // Publish::message(json_encode($dockerClient->getDockerJSON("/containers/json?all=1")));
+
         $containers = array_filter($dockerClient->getDockerJSON("/containers/json?all=1"), function ($ct) use ($containers) {
             return in_array(str_replace("/", "", $ct['Names'][0]), $containers) && $ct['Labels'][Container::$LABELS["unraidManaged"]];
         });
@@ -63,14 +65,12 @@ class Containers
                 }
 
                 if (!$releases->hasReleases()) {
-                    Publish::message("<p>Falling back to last 30 tags for information for $container->repositorySource</p>");
-                    $releases->pullTags();
+                    $releases->pullFallbackReleases();
                 }
 
                 if ($secondaryReleases) {
                     if (!$secondaryReleases->hasReleases() && !empty($container->repositorySecondarySource)) {
-                        Publish::message("<p>Falling back to last 30 tags for information for $container->repositorySecondarySource </p>");
-                        $secondaryReleases->pullTags();
+                        $secondaryReleases->pullFallbackReleases();
                     }
                     $secondaryReleases->organiseReleases();
                 }
@@ -117,7 +117,7 @@ class Containers
 
                     $latestImageCreatedAt = (new DateTime($firstRelease->createdAt))->format('Y-m-d H:i:s');
 
-                    Publish::message("<h3>$container->name</h3>");
+                    Publish::message("<h3>Container: $container->name</h3>");
                     Publish::message("<h3>$currentImageSourceTag ($currentImageCreatedAt) ---->  {$firstRelease->tagName} ({$latestImageCreatedAt})</h3>");
                     Publish::message("<a href=\"$releasesUrl\" target=\"blank\">Url for primary changelog information</a>");
                     if (!empty($allSecondaryReleases)) {
