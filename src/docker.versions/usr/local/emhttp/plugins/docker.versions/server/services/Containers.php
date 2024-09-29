@@ -13,6 +13,7 @@ use DockerVersions\Services\Releases;
 use DockerVersions\Models\Release;
 use DockerVersions\Helpers\Publish;
 use DockerClient;
+use DateTime;
 
 class Containers
 {
@@ -126,58 +127,25 @@ class Containers
                     }
 
                     Publish::message('<pre class="releases" style="overflow-y: scroll; height:400px; border: 2px solid #000; padding: 10px;border-radius: 5px;background-color: #f9f9f9; "></pre>');
-                    $allReleases = array_filter($allReleases, function ($release) use ($currentImageCreatedAt) {
-                        return strtotime($currentImageCreatedAt) < strtotime($release->createdAt);
-                    });
-                    // TODO: if all releases is empty then fallback to showing everything, as there is an update so something went wrong date wise
-                    // i.e the container created is too fresh maybe fallback to last 6 months?
-                    foreach ($allReleases as $release) {
+
+                    $releases = self::filterReleasesByDate($allReleases, $currentImageCreatedAt);
+
+                    foreach ($releases as $primaryRelease) {
                         Publish::message("<hr><h3 class='releasesInfo'>Primary Source</h3>");
-                        Publish::message("<a class='releasesInfo' target=\"blank\" href=\"{$release->htmlUrl}\">{$release->tagName} ($release->createdAt)</a><br><br>");
-                        if (!empty($release->extraReleases)) {
+                        Publish::message("<a class='releasesInfo' target=\"blank\" href=\"{$primaryRelease->htmlUrl}\">{$primaryRelease->tagName} ($primaryRelease->createdAt)</a><br><br>");
+                        if (!empty($primaryRelease->extraReleases)) {
                             Publish::message("<h3 class='releasesInfo'>Duplicate changelogs</h3>");
                         }
-                        foreach ($release->extraReleases as $extraRelease) {
+                        foreach ($primaryRelease->extraReleases as $extraRelease) {
                             if (strtotime($extraRelease->createdAt) > strtotime($currentImageCreatedAt) && $extraRelease->tagName != $currentImageSourceTag) {
                                 Publish::message("<a class='releasesInfo' target=\"blank\" href=\"{$extraRelease->htmlUrl}\">{$extraRelease->tagName} (" .
                                     $extraRelease->createdAt . ")</a><br><br>");
                             }
                         }
-                        Publish::message("<div class='releasesInfo'>{$release->getBody()}</div><br>");
+                        Publish::message("<div class='releasesInfo'>{$primaryRelease->getBody()}</div><br>");
 
                         if (!empty($allSecondaryReleases)) {
-                            $secondaryReleaseMatches = array_filter($allSecondaryReleases, function (Release $secondaryRelease) use ($release) {
-                                $tagA = filter_var($release->tagName, FILTER_SANITIZE_NUMBER_INT);
-                                $tagB = filter_var($secondaryRelease->tagName, FILTER_SANITIZE_NUMBER_INT);
-                                $tagsAreClose = str_contains($tagA, $tagB) || str_contains($tagB, $tagA);
-
-                                $allDates = [
-                                    ...array_map(
-                                        function ($extraRelease) {
-                                            return $extraRelease->createdAt;
-                                        },
-                                        $release->extraReleases
-                                    ),
-                                    $release->createdAt
-                                ];
-
-                                $within7daysMatch = !empty(array_filter(
-                                    $allDates,
-                                    function ($createdAt) use ($secondaryRelease) {
-                                        return abs((strtotime($createdAt) - strtotime($secondaryRelease->createdAt))) < (60 * 60 * 24 * 7);
-                                    }
-                                ));
-
-                                $within2daysMatch = !empty(array_filter(
-                                    $allDates,
-                                    function ($createdAt) use ($secondaryRelease) {
-                                        return abs((strtotime($createdAt) - strtotime($secondaryRelease->createdAt))) < (60 * 60 * 24 * 2);
-                                    }
-                                ));
-
-                                // Titles are close and within 7 days and not the same release or within 2 days 
-                                return ($tagsAreClose && $within7daysMatch) || $within2daysMatch;
-                            });
+                            $secondaryReleaseMatches = self::filterSecondaryReleases($allSecondaryReleases, $primaryRelease);
 
                             if (!empty($secondaryReleaseMatches)) {
                                 Publish::message("<h3 class='releasesInfo'>Secondary Source</h3>");
@@ -202,6 +170,78 @@ class Containers
                 Publish::message("<h3>Error only github repositories are supported at this time!</h3>");
             }
         }
+    }
+
+    /**
+     * Filter down releases by date
+     * 
+     * @return Release[]
+     * @param Release[] $releases
+     * @param string $date
+     */
+    private static function filterReleasesByDate(array $releases, string $date): array
+    {
+        $allFilteredReleases = array_filter($releases, function ($release) use ($date) {
+            return strtotime($date) < strtotime($release->createdAt);
+        });
+
+        if (empty($allFilteredReleases)) {
+            Publish::message("<p>No releases found given the source date of {$date}, Falling back to last 6 months of releases</p>");
+            $allFilteredReleases = array_filter($releases, function ($release) {
+                return (new DateTime())->modify('-6 months')->getTimestamp() < strtotime($release->createdAt);
+            });
+        }
+
+        if (empty($allFilteredReleases)) {
+            Publish::message("<p>No releases found in last 6 months, Falling back to all releases</p>");
+            $allFilteredReleases = $releases;
+        }
+
+        return $allFilteredReleases;
+    }
+
+    /**
+     * Filter down secondary releases
+     * 
+     * @return Release[]
+     * @param Release[] $secondaryReleases
+     * @param Release $primaryRelease
+     * @param string $date
+     */
+    private static function filterSecondaryReleases(array $secondaryReleases, Release $primaryRelease): array
+    {
+        return array_filter($secondaryReleases, function (Release $secondaryRelease) use ($primaryRelease) {
+            $primaryTag = filter_var($primaryRelease->tagName, FILTER_SANITIZE_NUMBER_INT);
+            $secondaryTag = filter_var($secondaryRelease->tagName, FILTER_SANITIZE_NUMBER_INT);
+            $tagsAreClose = str_contains($primaryTag, $secondaryTag) || str_contains($secondaryTag, $primaryTag);
+
+            $allDates = [
+                ...array_map(
+                    function ($extraRelease) {
+                        return $extraRelease->createdAt;
+                    },
+                    $primaryRelease->extraReleases
+                ),
+                $primaryRelease->createdAt
+            ];
+
+            $within7daysMatch = !empty(array_filter(
+                $allDates,
+                function ($createdAt) use ($secondaryRelease) {
+                    return abs((strtotime($createdAt) - strtotime($secondaryRelease->createdAt))) < (60 * 60 * 24 * 7);
+                }
+            ));
+
+            $within2daysMatch = !empty(array_filter(
+                $allDates,
+                function ($createdAt) use ($secondaryRelease) {
+                    return abs((strtotime($createdAt) - strtotime($secondaryRelease->createdAt))) < (60 * 60 * 24 * 2);
+                }
+            ));
+
+            // Titles are close and within 7 days and not the same release or within 2 days 
+            return ($tagsAreClose && $within7daysMatch) || $within2daysMatch;
+        });
     }
 }
 
