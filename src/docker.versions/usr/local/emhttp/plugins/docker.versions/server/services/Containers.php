@@ -61,6 +61,10 @@ class Containers
                 if (!$currentImageCreatedAt) {
                     Publish::message("<h3>WARNING: No " . Container::$LABELS["created"] . " image label found</h3>");
                     Publish::message("<p>Please request that " . Container::$LABELS["created"] . " is added by image creator for the best experience.</p>");
+                    if ($container->containerCreatedDate) {
+                        Publish::message("<p>Falling back to created date! ({$container->containerCreatedDate})</p>");
+                        $currentImageCreatedAt = $container->containerCreatedDate;
+                    }
                 }
 
                 if (!$releases->hasReleases()) {
