@@ -218,7 +218,7 @@ class Releases
 
     function isChangelogUrl(): bool
     {
-        return str_contains($this->repositorySource, ".md");
+        return str_contains($this->repositorySource, ".md") || str_contains(strtolower($this->repositorySource), "changelog");
     }
 
     /**
