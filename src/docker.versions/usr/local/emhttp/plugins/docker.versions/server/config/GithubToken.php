@@ -10,7 +10,7 @@ class GithubToken
      * Save the GitHub token to a file.
      * @return string
      */
-    static function formSubmit(): string
+    static function formSubmit(): string|null
     {
         if ($_SERVER["REQUEST_METHOD"] == "POST") {
             // Get the GitHub token from the form input
@@ -27,7 +27,6 @@ class GithubToken
         }
         return null;
     }
-
 
     /**
      * Get the GitHub token from the config file.
