@@ -26,12 +26,8 @@ function showChangeLog(container) {
     popup(title, url);
 }
 
-
 function popup(title, url) {
     $('#iframe-popup').html('<iframe id="myIframe" frameborder="0" scrolling="yes" width="100%" height="99%"></iframe>');
-    $('#myIframe')[0].contentDocument = '';
-
-    // Append HTML into an element within the iframe
 
     if (!changeLog_nchan) {
         changeLog_nchan = new NchanSubscriber('/sub/changelog');
@@ -48,6 +44,7 @@ function popup(title, url) {
                 $(iframeDocument).find('.releases').append(data);
             } else {
                 const box = $(iframeDocument).find('body')
+                box.css('background-color', 'white')
                 box.append(data)//.scrollTop(box[0].scrollHeight);
             }
         });
