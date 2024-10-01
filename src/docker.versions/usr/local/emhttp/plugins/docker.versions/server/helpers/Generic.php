@@ -10,9 +10,9 @@ class Generic
      * Summary of convertToDateString
      * @param string $dateString
      * @param bool $allowNow
-     * @return string|null
+     * @return string|int|null
      */
-    public static function convertToDateString(string|null $dateString, bool $allowNow = false): string
+    public static function convertToDateString(string|int|null $dateString, bool $allowNow = false): string
     {
         if (!$dateString && !$allowNow) {
             return "";
