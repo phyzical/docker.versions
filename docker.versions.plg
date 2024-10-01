@@ -7,13 +7,16 @@
 <!ENTITY plugdir "/usr/local/emhttp/plugins/&name;">
 <!ENTITY pluginURL "https://raw.githubusercontent.com/&github;/main/&name;.plg">
 <!ENTITY version "2024.10.01">
-<!ENTITY md5 "b99d6d966301580ff89b715e3828474e">
+<!ENTITY md5 "a72fe2aaec560d35591a6e484eb37974">
 ]>
 
 <PLUGIN name="&name;" author="&author;" version="&version;" launch="&launch;" pluginURL="&pluginURL;" min="6.12.3">
     <CHANGES>
 ###2024.10.01
 - Fix type issue on settings page function
+- Fix fallback date being too soon and just use last 2 months instead
+- Avoid adding empty "duplicate changlogs" 
+- Fix a early access issue around secondary changelogs after refactor
 
 ###2024.09.30
 - Fix regression around missing open containers image date

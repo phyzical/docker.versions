@@ -9,6 +9,7 @@ require_once("$documentRoot/plugins/docker.versions/server/helpers/Generic.php")
 use DockerVersions\Helpers\Publish;
 use DockerVersions\Helpers\Generic;
 use DockerVersions\Services\Releases;
+use DateTime;
 use DockerTemplates;
 
 class Container
@@ -46,7 +47,9 @@ class Container
         $this->isPreRelease = Releases::isPreRelease($containerPayload["Image"]) ?? false;
         $this->tagIgnorePrefixes = array_filter(explode(",", $containerPayload["Labels"][self::$LABELS["tagIgnorePrefixes"]])) ?? [];
         $this->imageCreatedAt = Generic::convertToDateString($containerPayload["Labels"][self::$LABELS["created"]]) ?? "";
-        $this->containerCreatedDate = Generic::convertToDateString($containerPayload["Created"]);
+        // $this->containerCreatedDate = Generic::convertToDateString($containerPayload["Created"]);
+        // Lets just hardcode to the last 2 months this date isn't the best as it updates every change
+        $this->containerCreatedDate = Generic::convertToDateString((new DateTime())->modify('-2 months')->getTimestamp());
     }
 
     /**

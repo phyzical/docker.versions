@@ -74,11 +74,14 @@ class Containers
                     $releases->pullFallbackReleases();
                 }
 
+                $allSecondaryReleases = [];
+
                 if ($secondaryReleases) {
                     if (!$secondaryReleases->hasReleases() && !empty($container->repositorySecondarySource)) {
                         $secondaryReleases->pullFallbackReleases();
                     }
                     $secondaryReleases->organiseReleases();
+                    $allSecondaryReleases = $secondaryReleases->releases;
                 }
 
                 $releases->organiseReleases();
@@ -87,17 +90,12 @@ class Containers
                 $lastRelease = null;
                 $allReleases = [];
                 $releasesUrl = "";
-                $allSecondaryReleases = [];
 
                 if ($releases->hasReleases()) {
                     $firstRelease = $releases->first();
                     $lastRelease = $releases->last();
                     $allReleases = $releases->releases;
                     $releasesUrl = $releases->releasesUrl;
-                }
-
-                if ($secondaryReleases->hasReleases()) {
-                    $allSecondaryReleases = $secondaryReleases->releases;
                 }
 
                 if (!$releases->hasReleases() && (!$secondaryReleases || !$secondaryReleases->hasReleases())) {
@@ -145,22 +143,25 @@ class Containers
                             "<summary><a target=\"blank\" href=\"{$primaryRelease->htmlUrl}\">{$primaryRelease->tagName} ($primaryRelease->createdAt)</a></summary>",
                         ];
                         if (!empty($primaryRelease->extraReleases)) {
-                            $detailsChunks = array_merge(
-                                $detailsChunks,
-                                [
-                                    "<details>",
-                                    "<summary>Duplicate changelogs</summary>"
-                                ],
-                                array_map(
-                                    function ($extraRelease) {
-                                        return "<a target=\"blank\" href=\"{$extraRelease->htmlUrl}\">{$extraRelease->tagName} ({$extraRelease->createdAt})</a>";
-                                    },
-                                    array_filter($primaryRelease->extraReleases, function ($extraRelease) use ($currentImageCreatedAt, $currentImageSourceTag) {
-                                        return strtotime($extraRelease->createdAt) > strtotime($currentImageCreatedAt) && $extraRelease->tagName != $currentImageSourceTag;
-                                    })
-                                ),
-                                ["</details>"]
-                            );
+                            $filteredDuplicates = array_filter($primaryRelease->extraReleases, function ($extraRelease) use ($currentImageCreatedAt, $currentImageSourceTag) {
+                                return strtotime($extraRelease->createdAt) > strtotime($currentImageCreatedAt) && $extraRelease->tagName != $currentImageSourceTag;
+                            });
+                            if (!empty($filteredDuplicates)) {
+                                $detailsChunks = array_merge(
+                                    $detailsChunks,
+                                    [
+                                        "<details>",
+                                        "<summary>Duplicate changelogs</summary>"
+                                    ],
+                                    array_map(
+                                        function ($extraRelease) {
+                                            return "<a target=\"blank\" href=\"{$extraRelease->htmlUrl}\">{$extraRelease->tagName} ({$extraRelease->createdAt})</a>";
+                                        },
+                                        $filteredDuplicates
+                                    ),
+                                    ["</details>"]
+                                );
+                            }
                         }
 
                         $detailsChunks = array_merge(
