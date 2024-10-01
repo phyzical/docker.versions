@@ -6,12 +6,15 @@
 <!ENTITY launch "Settings/docker.versions">
 <!ENTITY plugdir "/usr/local/emhttp/plugins/&name;">
 <!ENTITY pluginURL "https://raw.githubusercontent.com/&github;/main/&name;.plg">
-<!ENTITY version "2024.09.30">
-<!ENTITY md5 "bb529d26d3718c365dd85415d819586b">
+<!ENTITY version "2024.10.01">
+<!ENTITY md5 "b99d6d966301580ff89b715e3828474e">
 ]>
 
 <PLUGIN name="&name;" author="&author;" version="&version;" launch="&launch;" pluginURL="&pluginURL;" min="6.12.3">
     <CHANGES>
+###2024.10.01
+- Fix type issue on settings page function
+
 ###2024.09.30
 - Fix regression around missing open containers image date
 - Fix fallback to secondary when primary source is missing
