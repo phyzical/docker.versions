@@ -12,11 +12,15 @@
 
 <PLUGIN name="&name;" author="&author;" version="&version;" launch="&launch;" pluginURL="&pluginURL;" min="6.12.3">
     <CHANGES>
+###2024.10.02
+- Fix archiving permissions
+- Add automated versioning to the plugin via ci
+
 ###2024.10.01
 - Fix type issue on settings page function
 - Fix fallback date being too soon and just use last 2 months instead
 - Avoid adding empty "duplicate changlogs" 
-- Fix a early access issue around secondary changelogs after refactor\
+- Fix a early access issue around secondary changelogs after refactor
 - Hardcode background as white to avoid theme issues
 
 ###2024.09.30
