@@ -18,7 +18,7 @@ rsync -av --progress src/$plugin_name/ "$tmpdir" --exclude .git --exclude tmp --
 cd "$tmpdir" || exit
 
 tar_command="tar"
-sed_prefix=""
+sed_prefix="-i"
 if [[ "$(uname)" == "Darwin" ]]; then
     tar_command="gtar"
     sed_prefix="-i ''"
