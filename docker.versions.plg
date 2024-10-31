@@ -12,6 +12,8 @@
 
 <PLUGIN name="&name;" author="&author;" version="&version;" launch="&launch;" pluginURL="&pluginURL;" min="6.12.3">
     <CHANGES>
+###2024.10.31
+- Fix text wrapping so you dont need to scroll to the right to see long changelogs
 ###2024.10.02
 - Fix archiving permissions
 - Add automated versioning to the plugin via ci

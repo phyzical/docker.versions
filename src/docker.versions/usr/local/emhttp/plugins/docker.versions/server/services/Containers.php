@@ -139,7 +139,7 @@ class Containers
 
                     foreach ($releases as $primaryRelease) {
                         $detailsChunks = [
-                            "<details class='releasesInfo'>",
+                            "<details style='text-wrap:wrap;' class='releasesInfo'>",
                             "<summary><a target=\"blank\" href=\"{$primaryRelease->htmlUrl}\">{$primaryRelease->tagName} ($primaryRelease->createdAt)</a></summary>",
                         ];
                         if (!empty($primaryRelease->extraReleases)) {
