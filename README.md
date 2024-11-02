@@ -53,7 +53,7 @@ For the best experience images try to add following labels;
 |                                   | releases - when set will only parse releases                                                                    |
 |                                   | tags - when set will only parse tags                                                                            |
 |                                   | commits - when set will only parse commits                                                                      |
-|                                   | disable - when set it will just skip source entirely                                                            |
+|                                   | disabled - when set it will just skip source entirely                                                           |
 |                                   |                                                                                                                 |
 | docker.versions.source            | Same as org.opencontainers.image.source                                                                         |
 |                                   | but is used to collect a secondary list of releases                                                             |
