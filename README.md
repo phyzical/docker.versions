@@ -4,7 +4,7 @@ Install via CA apps in unraid
 
 Unraid plugin to use open container labels to attempt to extract some changelogs when a new version is detected
 
-At the moment github is only supported, happy to support more just need some good examples.
+At the moment github is only supported, happy to support more just need some good examples, The one exception to this is currently for changelog sources.
 
 It should be noted the quality of the changelog is dependent on whatever is posted on the release by the maintainers.
 
@@ -90,6 +90,11 @@ i.e
         tags: ghcr.io/${{ github.repository }}:latest
         labels: ${{ steps.meta.outputs.labels }}
 ```
+
+## Changelog matching
+
+Below is the current matching regex's for changelogs
+![Changelog Matches](images/changelogMatches.png)
 
 below are a few examples of what can happen
 
