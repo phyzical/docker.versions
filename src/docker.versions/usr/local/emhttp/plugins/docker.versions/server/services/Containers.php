@@ -52,7 +52,7 @@ class Containers
             if (empty($releaseSource)) {
                 $releaseSources[$index] = null;
             } else {
-                $releases = new Releases($container, $releaseSource, $releaseSourceTypes[$index]);
+                $releases = new Releases($container, $releaseSource, $releaseSourceTypes[$index] ?? '');
                 $releases->pullAllReleases();
                 $releaseSources[$index] = $releases;
             }
