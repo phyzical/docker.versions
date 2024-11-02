@@ -38,6 +38,58 @@ class Containers
     }
 
     /**
+     * Summary of pullContainerReleases
+     * @param Container $container
+     * 
+     * @return Releases[]
+     */
+    static function pullContainerReleases(Container $container)
+    {
+        $releaseSourceTypes = array_merge([$container->imageSourceType], explode(",", $container->imageSourceType));
+        $releaseSources = array_merge([$container->repositorySource], explode(",", $container->repositorySecondarySource));
+
+        array_walk($releaseSources, function ($releaseSource, $index) use ($container, $releaseSourceTypes, &$releaseSources) {
+            if (empty($releaseSource)) {
+                $releaseSources[$index] = null;
+            } else {
+                $releases = new Releases($container, $releaseSource, $releaseSourceTypes[$index]);
+                $releases->pullAllReleases();
+                $releaseSources[$index] = $releases;
+            }
+        });
+
+        $releaseSources = array_filter($releaseSources);
+
+        $hasReleases = false;
+        foreach ($releaseSources as $release) {
+            if ($release->hasReleases()) {
+                $hasReleases = true;
+                break;
+            }
+        }
+
+        if (!$hasReleases) {
+            foreach ($releaseSources as $release) {
+                Publish::message("<li class='warnings'>No releases found for '" . $release->repositorySource . "' !</li>");
+                Publish::message("<li class='warnings'><a href=\"$release->releasesUrl\" target=\"blank\">$release->releasesUrl</a></li>");
+            }
+            Publish::message("<li class='warnings'>" . Container::$LABELS["source"] . "=" . $releaseSources[0]->repositorySource . "</li>");
+            Publish::message("<li class='warnings'>" . Container::$LABELS["version"] . "=" . $container->imageVersion . "</li>");
+            Publish::message("<li class='warnings'>" . Container::$LABELS["created"] . "=" . $container->imageCreatedAt . "</li>");
+            Publish::message("<li class='warnings'>" . Container::$LABELS["secondarySource"] . "=" . $container->repositorySecondarySource . "</li>");
+            return [];
+        }
+
+        return array_filter($releaseSources, function ($releases) {
+            $hasReleases = $releases->hasReleases();
+            if (!$hasReleases) {
+                Publish::message("<li class='warnings'>No releases found for '" . $releases->repositorySource . "' !</li>");
+            }
+            return $hasReleases;
+        });
+    }
+
+    /**
      * Get the container change logs.
      * @return void
      * @param string[] $containers
@@ -48,18 +100,19 @@ class Containers
 
         foreach ($containers as $container) {
             if ($container->isGithubRepository()) {
-                $releases = new Releases($container, $container->repositorySource);
-                $releases->pullReleases();
-                $secondaryReleases = null;
-                if (!empty($container->repositorySecondarySource)) {
-                    $secondaryReleases = new Releases($container, $container->repositorySecondarySource);
-                    $secondaryReleases->pullReleases();
+                Publish::message("<details style='display: none' class='warningsInfo' open><summary>All Warnings:</summary><ul></ul></details>");
+
+                $releases = self::pullContainerReleases($container);
+
+                if (empty($releases)) {
+                    continue;
                 }
 
+                $firstReleases = array_shift($releases);
+                $firstRelease = $firstReleases->first();
+                $lastRelease = $firstReleases->last();
                 $currentImageSourceTag = $container->imageVersion;
                 $currentImageCreatedAt = $container->imageCreatedAt;
-
-                Publish::message("<details style='display: none' class='warningsInfo' open><summary>All Warnings:</summary><ul></ul></details>");
 
                 if (!$currentImageCreatedAt) {
                     Publish::message("<li class='warnings'>No " . Container::$LABELS["created"] . " image label found</li>");
@@ -68,78 +121,32 @@ class Containers
                         Publish::message("<li class='warnings'>Falling back to created date! ({$container->containerCreatedDate})</li>");
                         $currentImageCreatedAt = $container->containerCreatedDate;
                     }
-                }
 
-                if (!$releases->hasReleases()) {
-                    $releases->pullFallbackReleases();
-                }
-
-                $allSecondaryReleases = [];
-
-                if ($secondaryReleases) {
-                    if (!$secondaryReleases->hasReleases() && !empty($container->repositorySecondarySource)) {
-                        $secondaryReleases->pullFallbackReleases();
+                    if (!$currentImageCreatedAt && !empty($firstReleases->releases)) {
+                        Publish::message("<li class='warnings'>No org.opencontainers.image.created, Falling back to displaying all " . $firstRelease->type . "s</li>");
+                        $currentImageCreatedAt = $lastRelease->createdAt;
+                        $currentImageSourceTag = $lastRelease->tagName;
                     }
-                    $secondaryReleases->organiseReleases();
-                    $allSecondaryReleases = $secondaryReleases->releases;
                 }
 
-                $releases->organiseReleases();
-
-                $firstRelease = null;
-                $lastRelease = null;
-                $allReleases = [];
-                $releasesUrl = "";
-
-                if ($releases->hasReleases()) {
-                    $firstRelease = $releases->first();
-                    $lastRelease = $releases->last();
-                    $allReleases = $releases->releases;
-                    $releasesUrl = $releases->releasesUrl;
-                }
-
-                if (!$releases->hasReleases() && (!$secondaryReleases || !$secondaryReleases->hasReleases())) {
-                    Publish::message("<li class='warnings'>Error no releases found!</li>");
-                    Publish::message("<li class='warnings'><a href=\"$releases->releasesUrl\" target=\"blank\">$releases->releasesUrl</a></li>");
-                    Publish::message("<li class='warnings'>" . Container::$LABELS["source"] . "=" . $releases->repositorySource . "</li>");
-                    Publish::message("<li class='warnings'>" . Container::$LABELS["version"] . "=" . $container->imageVersion . "</li>");
-                    Publish::message("<li class='warnings'>" . Container::$LABELS["created"] . "=" . $container->imageCreatedAt . "</li>");
-                    continue;
-                }
-
-                // If no primary found make secondary primary
-                if (!$releases->hasReleases() && $secondaryReleases && $secondaryReleases->hasReleases()) {
-                    Publish::message("<li class='warnings'>No primary source releases found, falling back to secondary</li>");
-                    $firstRelease = $secondaryReleases->first();
-                    $lastRelease = $secondaryReleases->last();
-                    $releasesUrl = $secondaryReleases->releasesUrl;
-                    $allReleases = $secondaryReleases->releases;
-                    $allSecondaryReleases = [];
-                }
-
-                if (!$currentImageCreatedAt && !empty($allReleases)) {
-                    Publish::message("<li class='warnings'>No org.opencontainers.image.created, Falling back to displaying all " . $firstRelease->type . "s</li>");
-                    $currentImageCreatedAt = $lastRelease->createdAt;
-                    $currentImageSourceTag = $lastRelease->tagName;
-                }
-
-                if (!empty($allReleases)) {
+                if (!empty($firstReleases->releases)) {
                     $latestImageCreatedAt = $firstRelease->createdAt;
 
                     Publish::message("<h3>Container: $container->name</h3>");
                     Publish::message("<h3>$currentImageSourceTag ($currentImageCreatedAt) ---->  {$firstRelease->tagName} ({$latestImageCreatedAt})</h3>");
-                    Publish::message("<a href=\"$releasesUrl\" target=\"blank\">Url for primary changelog information</a>");
-                    if (!empty($allSecondaryReleases)) {
-                        Publish::message("<br><a href=\"$secondaryReleases->releasesUrl\" target=\"blank\">Url for secondary changelog information</a>");
+                    Publish::message("<a href=\"$firstReleases->releasesUrl\" target=\"blank\">Url for changelog information id:1</a>");
+                    $index = 2;
+                    foreach ($releases as $release) {
+                        Publish::message("<br><a href=\"$release->releasesUrl\" target=\"blank\">Url for changelog information id:$index</a>");
+                        $index++;
                     }
-
                     Publish::message('<pre class="releases" style="display: none; overflow-y: scroll; height:400px; border: 2px solid #000; padding: 10px;border-radius: 5px;background-color: #f9f9f9; "></pre>');
 
-                    $releases = self::filterReleasesByDate($allReleases, $currentImageCreatedAt);
+                    $primaryReleases = self::filterReleasesByDate($firstReleases->releases, $currentImageCreatedAt);
 
-                    foreach ($releases as $primaryRelease) {
+                    foreach ($primaryReleases as $primaryRelease) {
                         $detailsChunks = [
-                            "<details style='text-wrap:wrap;' class='releasesInfo'>",
+                            "<details style='text-wrap:wrap;' class='releasesInfo' open>",
                             "<summary><a target=\"blank\" href=\"{$primaryRelease->htmlUrl}\">{$primaryRelease->tagName} ($primaryRelease->createdAt)</a></summary>",
                         ];
                         if (!empty($primaryRelease->extraReleases)) {
@@ -150,7 +157,7 @@ class Containers
                                 $detailsChunks = array_merge(
                                     $detailsChunks,
                                     [
-                                        "<details>",
+                                        "<details open>",
                                         "<summary>Duplicate changelogs</summary>"
                                     ],
                                     array_map(
@@ -167,22 +174,22 @@ class Containers
                         $detailsChunks = array_merge(
                             $detailsChunks,
                             [
-                                "<details>",
-                                "<summary>Changelog Notes</summary>",
+                                "<details open>",
+                                "<summary>Changelog Notes id:1</summary>",
                                 "<div>{$primaryRelease->getBody()}</div>",
                                 "</details>"
                             ]
                         );
 
-                        if (!empty($allSecondaryReleases)) {
-                            $secondaryReleaseMatches = self::filterSecondaryReleases($allSecondaryReleases, $primaryRelease);
-
+                        $index = 2;
+                        foreach ($releases as $release) {
+                            $secondaryReleaseMatches = self::filterSecondaryReleases($release->releases, $primaryRelease);
                             if (!empty($secondaryReleaseMatches)) {
                                 $detailsChunks = array_merge(
                                     $detailsChunks,
                                     [
-                                        "<details>",
-                                        "<summary>Secondary Source Changelogs</summary>"
+                                        "<details open>",
+                                        "<summary>Secondary Source Changelogs id:$index</summary>"
                                     ],
                                 );
 
@@ -191,8 +198,8 @@ class Containers
                                         $detailsChunks = array_merge(
                                             $detailsChunks,
                                             [
-                                                "<details>",
-                                                "<summary>Duplicate Secondary changelogs</summary>"
+                                                "<details open>",
+                                                "<summary>Duplicate Secondary changelogs id:$index</summary>"
                                             ],
                                             array_map(
                                                 function ($extraRelease) {
@@ -221,6 +228,7 @@ class Containers
                                     ]
                                 );
                             }
+                            $index++;
                         }
 
                         $detailsChunks = array_merge(
@@ -246,6 +254,7 @@ class Containers
      * @param Release[] $releases
      * @param string $date
      */
+    //  TODO: if we can ever get the a good fallback for createed date lets filterByRelease in organise and then we can improve the pull flow to fallback better
     private static function filterReleasesByDate(array $releases, string $date): array
     {
         $allFilteredReleases = array_filter($releases, function ($release) use ($date) {

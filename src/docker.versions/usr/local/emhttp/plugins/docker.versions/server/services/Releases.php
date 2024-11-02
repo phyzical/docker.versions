@@ -15,6 +15,7 @@ use DockerVersions\Helpers\Publish;
 class Releases
 {
     public string $repositorySource;
+    public string $sourceType;
     public string $releasesUrl;
     const perPage = "100";
 
@@ -23,12 +24,16 @@ class Releases
     /**
      * Releases constructor.
      * @param Container $container
+     * @param string $repositorySource
+     * @param string $sourceType
      */
     public function __construct(
         Container $container,
-        string $repositorySource
+        string $repositorySource,
+        string $sourceType,
     ) {
         $this->container = $container;
+        $this->sourceType = $sourceType;
         $this->repositorySource = $repositorySource;
     }
 
@@ -225,16 +230,59 @@ class Releases
     /**
      * Handle the fallback releases.
      */
-    function pullFallbackReleases(): void
+    function pullAllReleases(): void
     {
+        if (!empty($this->sourceType)) {
+            $this->actionSourceType();
+            return;
+        }
         // if source is an md file
         if ($this->isChangelogUrl()) {
-            Publish::message("<li class='warnings'>Falling back to changelog for information for $this->repositorySource</li>");
             $this->parseChangelogFile();
-        } else {
-            Publish::message("<li class='warnings'>Falling back to last 30 tags for information for $this->repositorySource</li>");
+        }
+        if (!$this->hasReleases()) {
+            $this->pullReleases();
+        }
+        if (!$this->hasReleases()) {
             $this->pullTags();
         }
+        if (!$this->hasReleases()) {
+            $this->pullCommits();
+        }
+    }
+    /**
+     * Handle the source type.
+     */
+    function actionSourceType(): void
+    {
+        switch ($this->sourceType) {
+            case "changelog":
+                $this->parseChangelogFile();
+                break;
+            case "releases":
+                $this->pullReleases();
+                break;
+            case "tags":
+                $this->pullTags();
+                break;
+            case "commits":
+                $this->pullCommits();
+                break;
+            case "disabled":
+                Publish::loadingMessage($this->repositorySource . "is disabled, skipping");
+                break;
+            default:
+                Publish::message("<li class='warnings'>Unknown source type: $this->sourceType, please provide one of the following '" . implode("', '", Release::ALLOWED_TYPES) . "'</li>");
+        }
+    }
+
+    /**
+     * Check if the source is disabled.
+     * @return bool
+     */
+    function isDisabled(): bool
+    {
+        return $this->sourceType == "disabled";
     }
 
     /**
@@ -309,9 +357,13 @@ class Releases
             }, $groupedChangeLogs)
         );
 
-        if (!$this->hasReleases()) {
+
+        if ($this->hasReleases()) {
+            Publish::message("<li class='warnings'>Pulled to changelog for information for $this->repositorySource</li>");
+        } else {
             Publish::message("<li class='warnings'>No changelogs found! (<a href=\"$releasesUrl\" target=\"blank\">Changelogs</a>)</li>");
         }
+        $this->organiseReleases();
     }
 
     /**
@@ -319,9 +371,6 @@ class Releases
      */
     function pullReleases(): void
     {
-        if ($this->isChangelogUrl()) {
-            return;
-        }
         $releasesUrl = $this->githubURL() . "/releases?per_page=" . self::perPage;
         $this->releasesUrl = $releasesUrl;
 
@@ -345,23 +394,26 @@ class Releases
             );
         }, $releases);
 
-        if (!$this->hasReleases()) {
+        if ($this->hasReleases()) {
+            Publish::message("<li class='warnings'>Pulled last " . count($this->releases) . " releases for information for $this->repositorySource</li>");
+        } else {
             Publish::message("<li class='warnings'>No releases found! (<a href=\"$releasesUrl\" target=\"blank\">Releases</a>)</li>");
         }
+        $this->organiseReleases();
     }
     /**
      * Pull tags from the github API.
      */
     function pullTags(): void
     {
-        $tagsUrl = $this->githubURL() . "/tags?per_page=" . self::perPage;
-        $this->releasesUrl = $tagsUrl;
-        $tags = $this->makeReq($tagsUrl);
+        $url = $this->githubURL() . "/tags?per_page=" . self::perPage;
+        $this->releasesUrl = $url;
+        $tags = $this->makeReq($url);
 
         // $page = 1;
         // $tags = [];
         // do {
-        //     $tags = array_merge($tags, $this->makeReq("$tagsUrl&page=$page"));
+        //     $tags = array_merge($tags, $this->makeReq("$url&page=$page"));
         //     $page++;
         // } while (count($tags) % 100 == 0);
 
@@ -379,9 +431,48 @@ class Releases
             );
         }, $tags);
 
-        if (!$this->hasReleases()) {
-            Publish::message("<li class='warnings'>No tags found! (<a href=\"$tagsUrl\" target=\"blank\">Tags</a>)</li>");
+        if ($this->hasReleases()) {
+            Publish::message("<li class='warnings'>Pulled last " . count($this->releases) . " tags for information for $this->repositorySource</li>");
+        } else {
+            Publish::message("<li class='warnings'>No tags found! (<a href=\"$url\" target=\"blank\">$url</a>)</li>");
         }
+        $this->organiseReleases();
+    }
+
+    /**
+     * Pull commits from the github API.
+     */
+    function pullCommits(): void
+    {
+        $url = $this->githubURL() . "/commits?per_page=" . self::perPage;
+        $this->releasesUrl = $url;
+        $commits = $this->makeReq($url);
+
+        // $page = 1;
+        // $commits = [];
+        // do {
+        //     $commits = array_merge($commits, $this->makeReq("$url&page=$page"));
+        //     $page++;
+        // } while (count($commits) % 100 == 0);
+
+        $this->releases = array_map(function ($commit) {
+            return new Release(
+                "commit",
+                $commit->sha,
+                $commit->commit->author->date ?? $commit->commit->committer->date,
+                $commit->commit->url,
+                $commit->commit->message ?? "No commit message sorry!",
+                // We have no way of detecting this for a commits
+                false
+            );
+        }, $commits);
+
+        if ($this->hasReleases()) {
+            Publish::message("<li class='warnings'>pulled last " . count($this->releases) . " commits for information for $this->repositorySource</li>");
+        } else {
+            Publish::message("<li class='warnings'>No commits found! (<a href=\"$url\" target=\"blank\">$url</a>)</li>");
+        }
+        $this->organiseReleases();
     }
 }
 
