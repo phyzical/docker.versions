@@ -13,6 +13,7 @@
 <PLUGIN name="&name;" author="&author;" version="&version;" launch="&launch;" pluginURL="&pluginURL;" min="6.12.3">
     <CHANGES>
 ###2024.11.02
+- Adjusted docker.versions.source to be a comma separated list
 - Changed all summaries to be open by default
 - Reworked readme
 - Added a new fallback of commit messages, falls back if no tags are found or is enforced via sourceType
