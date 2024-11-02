@@ -48,12 +48,13 @@ class Containers
 
         foreach ($containers as $container) {
             if ($container->isGithubRepository()) {
-                $releases = new Releases($container, $container->repositorySource);
-                $releases->pullReleases();
+                // TODO: we can make it support more than 2 sources by adjusting the logic here to be an array of releaseSources
+                $releases = new Releases($container, $container->repositorySource, $container->imageSourceType);
+                $releases->pullAllReleases();
                 $secondaryReleases = null;
                 if (!empty($container->repositorySecondarySource)) {
-                    $secondaryReleases = new Releases($container, $container->repositorySecondarySource);
-                    $secondaryReleases->pullReleases();
+                    $secondaryReleases = new Releases($container, $container->repositorySecondarySource, $container->sourceType);
+                    $secondaryReleases->pullAllReleases();
                 }
 
                 $currentImageSourceTag = $container->imageVersion;
@@ -70,45 +71,29 @@ class Containers
                     }
                 }
 
-                if (!$releases->hasReleases()) {
-                    $releases->pullFallbackReleases();
-                }
+                $hasPrimaryReleases = $releases->hasReleases();
+                $hasSecondaryReleases = $secondaryReleases && $secondaryReleases->hasReleases();
+                $allReleases = $hasPrimaryReleases ? $releases->releases : [];
+                $allSecondaryReleases = $secondaryReleases ? $secondaryReleases->releases : [];
+                $firstRelease = $hasPrimaryReleases ? $releases->first() : null;
+                $lastRelease = $hasPrimaryReleases ? $releases->last() : null;
+                $releasesUrl = $hasPrimaryReleases ? $releases->releasesUrl : "";
 
-                $allSecondaryReleases = [];
-
-                if ($secondaryReleases) {
-                    if (!$secondaryReleases->hasReleases() && !empty($container->repositorySecondarySource)) {
-                        $secondaryReleases->pullFallbackReleases();
-                    }
-                    $secondaryReleases->organiseReleases();
-                    $allSecondaryReleases = $secondaryReleases->releases;
-                }
-
-                $releases->organiseReleases();
-
-                $firstRelease = null;
-                $lastRelease = null;
-                $allReleases = [];
-                $releasesUrl = "";
-
-                if ($releases->hasReleases()) {
-                    $firstRelease = $releases->first();
-                    $lastRelease = $releases->last();
-                    $allReleases = $releases->releases;
-                    $releasesUrl = $releases->releasesUrl;
-                }
-
-                if (!$releases->hasReleases() && (!$secondaryReleases || !$secondaryReleases->hasReleases())) {
+                if (!$hasPrimaryReleases && !$hasSecondaryReleases) {
                     Publish::message("<li class='warnings'>Error no releases found!</li>");
+                    if ($secondaryReleases) {
+                        Publish::message("<li class='warnings'>Error no secondary releases found either!!</li>");
+                    }
                     Publish::message("<li class='warnings'><a href=\"$releases->releasesUrl\" target=\"blank\">$releases->releasesUrl</a></li>");
                     Publish::message("<li class='warnings'>" . Container::$LABELS["source"] . "=" . $releases->repositorySource . "</li>");
                     Publish::message("<li class='warnings'>" . Container::$LABELS["version"] . "=" . $container->imageVersion . "</li>");
                     Publish::message("<li class='warnings'>" . Container::$LABELS["created"] . "=" . $container->imageCreatedAt . "</li>");
+                    Publish::message("<li class='warnings'>" . Container::$LABELS["secondarySource"] . "=" . $container->repositorySecondarySource . "</li>");
                     continue;
                 }
 
                 // If no primary found make secondary primary
-                if (!$releases->hasReleases() && $secondaryReleases && $secondaryReleases->hasReleases()) {
+                if (!$hasPrimaryReleases && $hasSecondaryReleases) {
                     Publish::message("<li class='warnings'>No primary source releases found, falling back to secondary</li>");
                     $firstRelease = $secondaryReleases->first();
                     $lastRelease = $secondaryReleases->last();
