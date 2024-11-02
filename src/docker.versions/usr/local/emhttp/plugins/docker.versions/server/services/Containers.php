@@ -113,7 +113,7 @@ class Containers
 
                     Publish::message("<h3>Container: $container->name</h3>");
                     Publish::message("<h3>$currentImageSourceTag ($currentImageCreatedAt) ---->  {$firstRelease->tagName} ({$latestImageCreatedAt})</h3>");
-                    Publish::message("<a href=\"$releasesUrl\" target=\"blank\">Url for primary changelog information</a>");
+                    Publish::message("<a href=\"$releasesUrl\" target=\"blank\">Url for changelog information</a>");
                     if (!empty($allSecondaryReleases)) {
                         Publish::message("<br><a href=\"$secondaryReleases->releasesUrl\" target=\"blank\">Url for secondary changelog information</a>");
                     }
@@ -124,7 +124,7 @@ class Containers
 
                     foreach ($releases as $primaryRelease) {
                         $detailsChunks = [
-                            "<details style='text-wrap:wrap;' class='releasesInfo'>",
+                            "<details style='text-wrap:wrap;' class='releasesInfo' open>",
                             "<summary><a target=\"blank\" href=\"{$primaryRelease->htmlUrl}\">{$primaryRelease->tagName} ($primaryRelease->createdAt)</a></summary>",
                         ];
                         if (!empty($primaryRelease->extraReleases)) {
@@ -135,7 +135,7 @@ class Containers
                                 $detailsChunks = array_merge(
                                     $detailsChunks,
                                     [
-                                        "<details>",
+                                        "<details open>",
                                         "<summary>Duplicate changelogs</summary>"
                                     ],
                                     array_map(
@@ -152,7 +152,7 @@ class Containers
                         $detailsChunks = array_merge(
                             $detailsChunks,
                             [
-                                "<details>",
+                                "<details open>",
                                 "<summary>Changelog Notes</summary>",
                                 "<div>{$primaryRelease->getBody()}</div>",
                                 "</details>"
@@ -166,7 +166,7 @@ class Containers
                                 $detailsChunks = array_merge(
                                     $detailsChunks,
                                     [
-                                        "<details>",
+                                        "<details open>",
                                         "<summary>Secondary Source Changelogs</summary>"
                                     ],
                                 );
@@ -176,7 +176,7 @@ class Containers
                                         $detailsChunks = array_merge(
                                             $detailsChunks,
                                             [
-                                                "<details>",
+                                                "<details open>",
                                                 "<summary>Duplicate Secondary changelogs</summary>"
                                             ],
                                             array_map(
@@ -231,6 +231,7 @@ class Containers
      * @param Release[] $releases
      * @param string $date
      */
+    //  TODO: if we can ever get the a good fallback for createed date lets filterByRelease in organise and then we can improve the pull flow to fallback better
     private static function filterReleasesByDate(array $releases, string $date): array
     {
         $allFilteredReleases = array_filter($releases, function ($release) use ($date) {
