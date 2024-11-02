@@ -20,7 +20,9 @@ class Container
         "source" => "org.opencontainers.image.source",
         "secondarySource" => "docker.versions.source",
         "tagIgnorePrefixes" => "docker.versions.tagIgnorePrefixes",
-        "unraidManaged" => "net.unraid.docker.managed"
+        "unraidManaged" => "net.unraid.docker.managed",
+        "sourceType" => "docker.versions.sourceType",
+        "imageSourceType" => "docker.versions.imageSourceType",
     ];
     public string $imageVersion;
     public string $name;
@@ -28,6 +30,8 @@ class Container
     public string $containerCreatedDate;
     public string $repositorySource;
     public string $repositorySecondarySource;
+    public string $sourceType;
+    public string $imageSourceType;
     /**
      * array of tagIgnorePrefixes
      * @var string[]
@@ -35,21 +39,32 @@ class Container
     public array $tagIgnorePrefixes;
     public bool $isPreRelease;
 
-
-
     public function __construct(
         array $containerPayload,
     ) {
-        $this->repositorySource = $this->getRepositorySource($containerPayload);
         $this->name = str_replace("/", "", $containerPayload['Names'][0]);
-        $this->repositorySecondarySource = $containerPayload["Labels"][self::$LABELS["secondarySource"]] ?? "";
-        $this->imageVersion = $containerPayload["Labels"][self::$LABELS["version"]] ?? "";
         $this->isPreRelease = Releases::isPreRelease($containerPayload["Image"]) ?? false;
-        $this->tagIgnorePrefixes = array_filter(explode(",", $containerPayload["Labels"][self::$LABELS["tagIgnorePrefixes"]])) ?? [];
-        $this->imageCreatedAt = Generic::convertToDateString($containerPayload["Labels"][self::$LABELS["created"]]) ?? "";
+        $this->processLabels($containerPayload);
         // $this->containerCreatedDate = Generic::convertToDateString($containerPayload["Created"]);
         // Lets just hardcode to the last 2 months this date isn't the best as it updates every change
         $this->containerCreatedDate = Generic::convertToDateString((new DateTime())->modify('-2 months')->getTimestamp());
+    }
+
+    /**
+     * process the labels from the container payload.
+     * @param array $containerPayload
+     * @return void
+     */
+    private function processLabels(array $containerPayload)
+    {
+        $labels = $containerPayload["Labels"];
+        $this->repositorySource = $this->getRepositorySource($containerPayload);
+        $this->repositorySecondarySource = $labels[self::$LABELS["secondarySource"]] ?? "";
+        $this->imageVersion = $labels[self::$LABELS["version"]] ?? "";
+        $this->tagIgnorePrefixes = array_filter(explode(",", $labels[self::$LABELS["tagIgnorePrefixes"]])) ?? [];
+        $this->imageCreatedAt = Generic::convertToDateString($labels[self::$LABELS["created"]]) ?? "";
+        $this->sourceType = $labels[self::$LABELS["sourceType"]] ?? "";
+        $this->imageSourceType = $labels[self::$LABELS["imageSourceType"]] ?? "";
     }
 
     /**
@@ -63,7 +78,7 @@ class Container
 
     /**
      * Get the repository source from the container.
-     * @param object $containerPayload
+     * @param array $containerPayload
      * @return string
      */
     private function getRepositorySource(array $containerPayload): string
