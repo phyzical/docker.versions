@@ -69,6 +69,9 @@ function popup(title, url) {
             // location = window.location.href;
         }
     });
+    setTimeout(function () {
+        $(".ui-dialog").css({ 'width': '90%', 'left': '5%' });
+    }, 300);
     $(".ui-dialog .ui-dialog-titlebar").addClass('menu');
     $('.ui-dialog .ui-dialog-titlebar-close').text('X').prop('title', _('Close'));
     $(".ui-dialog .ui-dialog-title").css({ 'text-align': 'center', 'width': '100%' });
