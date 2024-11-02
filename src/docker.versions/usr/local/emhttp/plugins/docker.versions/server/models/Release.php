@@ -10,7 +10,7 @@ use DockerVersions\Helpers\Generic;
 
 class Release
 {
-    public const ALLOWED_TYPES = ['release', 'tag', 'changelog'];
+    public const ALLOWED_TYPES = ['release', 'tag', 'changelog', 'commit'];
     public string $type;
     public string $tagName;
 

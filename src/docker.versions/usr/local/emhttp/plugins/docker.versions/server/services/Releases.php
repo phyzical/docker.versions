@@ -379,9 +379,40 @@ class Releases
             );
         }, $tags);
 
-        if (!$this->hasReleases()) {
-            Publish::message("<li class='warnings'>No tags found! (<a href=\"$tagsUrl\" target=\"blank\">Tags</a>)</li>");
+    /**
+     * Pull commits from the github API.
+     */
+    function pullCommits(): void
+    {
+        $url = $this->githubURL() . "/commits?per_page=" . self::perPage;
+        $this->releasesUrl = $url;
+        $commits = $this->makeReq($url);
+
+        // $page = 1;
+        // $commits = [];
+        // do {
+        //     $commits = array_merge($commits, $this->makeReq("$url&page=$page"));
+        //     $page++;
+        // } while (count($commits) % 100 == 0);
+
+        $this->releases = array_map(function ($commit) {
+            return new Release(
+                "commit",
+                $commit->sha,
+                $commit->commit->author->date ?? $commit->commit->committer->date,
+                $commit->commit->url,
+                $commit->commit->message ?? "No commit message sorry!",
+                // We have no way of detecting this for a commits
+                false
+            );
+        }, $commits);
+
+        if ($this->hasReleases()) {
+            Publish::message("<li class='warnings'>pulled last " . count($this->releases) . " commits for information for $this->repositorySource</li>");
+        } else {
+            Publish::message("<li class='warnings'>No commits found! (<a href=\"$url\" target=\"blank\">$url</a>)</li>");
         }
+        $this->organiseReleases();
     }
 }
 
