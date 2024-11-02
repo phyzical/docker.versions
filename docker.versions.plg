@@ -13,6 +13,7 @@
 <PLUGIN name="&name;" author="&author;" version="&version;" launch="&launch;" pluginURL="&pluginURL;" min="6.12.3">
     <CHANGES>
 ###2024.11.03
+- Fix an invalid reference to sourceType context
 - Support changelogs urls that are not hosted on github
 ###2024.11.02
 - Add cancel and update button to changelog popup

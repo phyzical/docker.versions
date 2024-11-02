@@ -269,7 +269,7 @@ class Releases
                 $this->pullCommits();
                 break;
             case "disabled":
-                Publish::loadingMessage($this->repositorySource . "is disabled, skipping");
+                Publish::loadingMessage($this->repositorySource . " is disabled, skipping");
                 break;
             default:
                 Publish::message("<li class='warnings'>Unknown source type: $this->sourceType, please provide one of the following '" . implode("', '", Release::ALLOWED_TYPES) . "'</li>");

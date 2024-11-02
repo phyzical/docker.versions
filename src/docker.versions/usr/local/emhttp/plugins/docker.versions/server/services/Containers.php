@@ -45,7 +45,7 @@ class Containers
      */
     static function pullContainerReleases(Container $container)
     {
-        $releaseSourceTypes = array_merge([$container->imageSourceType], explode(",", $container->imageSourceType));
+        $releaseSourceTypes = array_merge([$container->imageSourceType], explode(",", $container->sourceType));
         $releaseSources = array_merge([$container->repositorySource], explode(",", $container->repositorySecondarySource));
 
         array_walk($releaseSources, function ($releaseSource, $index) use ($container, $releaseSourceTypes, &$releaseSources) {
