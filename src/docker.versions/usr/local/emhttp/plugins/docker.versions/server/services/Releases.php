@@ -309,9 +309,13 @@ class Releases
             }, $groupedChangeLogs)
         );
 
-        if (!$this->hasReleases()) {
+
+        if ($this->hasReleases()) {
+            Publish::message("<li class='warnings'>Pulled to changelog for information for $this->repositorySource</li>");
+        } else {
             Publish::message("<li class='warnings'>No changelogs found! (<a href=\"$releasesUrl\" target=\"blank\">Changelogs</a>)</li>");
         }
+        $this->organiseReleases();
     }
 
     /**
@@ -319,9 +323,6 @@ class Releases
      */
     function pullReleases(): void
     {
-        if ($this->isChangelogUrl()) {
-            return;
-        }
         $releasesUrl = $this->githubURL() . "/releases?per_page=" . self::perPage;
         $this->releasesUrl = $releasesUrl;
 
@@ -345,23 +346,26 @@ class Releases
             );
         }, $releases);
 
-        if (!$this->hasReleases()) {
+        if ($this->hasReleases()) {
+            Publish::message("<li class='warnings'>Pulled last " . count($this->releases) . " releases for information for $this->repositorySource</li>");
+        } else {
             Publish::message("<li class='warnings'>No releases found! (<a href=\"$releasesUrl\" target=\"blank\">Releases</a>)</li>");
         }
+        $this->organiseReleases();
     }
     /**
      * Pull tags from the github API.
      */
     function pullTags(): void
     {
-        $tagsUrl = $this->githubURL() . "/tags?per_page=" . self::perPage;
-        $this->releasesUrl = $tagsUrl;
-        $tags = $this->makeReq($tagsUrl);
+        $url = $this->githubURL() . "/tags?per_page=" . self::perPage;
+        $this->releasesUrl = $url;
+        $tags = $this->makeReq($url);
 
         // $page = 1;
         // $tags = [];
         // do {
-        //     $tags = array_merge($tags, $this->makeReq("$tagsUrl&page=$page"));
+        //     $tags = array_merge($tags, $this->makeReq("$url&page=$page"));
         //     $page++;
         // } while (count($tags) % 100 == 0);
 
@@ -378,6 +382,14 @@ class Releases
                 false
             );
         }, $tags);
+
+        if ($this->hasReleases()) {
+            Publish::message("<li class='warnings'>Pulled last " . count($this->releases) . " tags for information for $this->repositorySource</li>");
+        } else {
+            Publish::message("<li class='warnings'>No tags found! (<a href=\"$url\" target=\"blank\">$url</a>)</li>");
+        }
+        $this->organiseReleases();
+    }
 
     /**
      * Pull commits from the github API.
