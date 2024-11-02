@@ -33,45 +33,45 @@ When a container image is checked for release changes the following steps of thi
 
 For the best experience images try to add following labels;
 
-| Label                             | Description                                                                                                                              |
-| --------------------------------- | ---------------------------------------------------------------------------------------------------------------------------------------- |
-| org.opencontainers.image.created  | If missing it will attempt to list the last 6 months of releases found based on type                                                     |
-|                                   | otherwise falls back to all found releases                                                                                               |
-|                                   |                                                                                                                                          |
-| org.opencontainers.image.source   | Attempts to use this as the source                                                                                                       |
-|                                   | if missing checks the unraid template for the image registry and attempts a best guess matchup to a github repo                          |
-|                                   |                                                                                                                                          |
-| org.opencontainers.image.version  | If present will be used as part of the subsetting of releases to be shown                                                                |
-|                                   | i.e if contains beta then tries to show other beta releases, vice versa exclude them if not found                                        |
-|                                   | Also uses the version to try and filter when a repo may manage multiple projects                                                         |
-|                                   |                                                                                                                                          |
-| docker.versions.imageSourceType   | If provided this will be used as the only place to check for releases                                                                    |
-|                                   | This can be useful if you want to avoid hitting github for relevant endpoints, or prefer a fallback                                      |
-|                                   | Applies to org.opencontainers.image.source                                                                                               |
-|                                   | Options include;                                                                                                                         |
-|                                   | changelogs - when set will only be parsed as a changelog, note url must contain `.md` or `changelog`                                     |
-|                                   | releases - when set will only parse releases                                                                                             |
-|                                   | tags - when set will only parse tags                                                                                                     |
-|                                   | commits - when set will only parse commits                                                                                               |
-|                                   | disable - when set it will just skip source entirely                                                                                     |
-|                                   |                                                                                                                                          |
-| docker.versions.source            | Same as org.opencontainers.image.source                                                                                                  |
-|                                   | but is used to collect a secondary list of releases                                                                                      |
-|                                   | If the primary list fails to find any items then this secondary list is used as the primary                                              |
-|                                   |                                                                                                                                          |
-|                                   | This is useful When the container is hosted external to the actual program source                                                        |
-|                                   | example if org.opencontainers.image.source is `https://github.com/linuxserver/docker-sonarr`                                             |
-|                                   | you can also provide docker.versions.source as`https://github.com/Sonarr/Sonarr`                                                         |
-|                                   | it will do its best to match up a secondary change with a primary change                                                                 |
-|                                   |                                                                                                                                          |
-|                                   | At this time only one secondary source is allowed, until i find the need for multiple it will stay this way                              |
-|                                   | feel free to raise an issue with the context that makes you think you need this logic and i can use it as a test case to implement it :) |
-|                                   |                                                                                                                                          |
-| docker.versions.sourceType        | Same as docker.versions.imageSourceType                                                                                                  |
-|                                   | but applies to docker.versions.source                                                                                                    |
-|                                   |                                                                                                                                          |
-| docker.versions.tagIgnorePrefixes | csv of terms used exclude certain releases                                                                                               |
-|                                   | i.e if you provide `apple,banana` if either of these are found in the title of the release it will not be shown                          |
+| Label                             | Description                                                                                                     |
+| --------------------------------- | --------------------------------------------------------------------------------------------------------------- |
+| org.opencontainers.image.created  | If missing it will attempt to list the last 6 months of releases found based on type                            |
+|                                   | otherwise falls back to all found releases                                                                      |
+|                                   |                                                                                                                 |
+| org.opencontainers.image.source   | Attempts to use this as the source                                                                              |
+|                                   | if missing checks the unraid template for the image registry and attempts a best guess matchup to a github repo |
+|                                   |                                                                                                                 |
+| org.opencontainers.image.version  | If present will be used as part of the subsetting of releases to be shown                                       |
+|                                   | i.e if contains beta then tries to show other beta releases, vice versa exclude them if not found               |
+|                                   | Also uses the version to try and filter when a repo may manage multiple projects                                |
+|                                   |                                                                                                                 |
+| docker.versions.imageSourceType   | If provided this will be used as the only place to check for releases                                           |
+|                                   | This can be useful if you want to avoid hitting github for relevant endpoints, or prefer a fallback             |
+|                                   | Applies to org.opencontainers.image.source                                                                      |
+|                                   | Options include;                                                                                                |
+|                                   | changelogs - when set will only be parsed as a changelog, note url must contain `.md` or `changelog`            |
+|                                   | releases - when set will only parse releases                                                                    |
+|                                   | tags - when set will only parse tags                                                                            |
+|                                   | commits - when set will only parse commits                                                                      |
+|                                   | disable - when set it will just skip source entirely                                                            |
+|                                   |                                                                                                                 |
+| docker.versions.source            | Same as org.opencontainers.image.source                                                                         |
+|                                   | but is used to collect a secondary list of releases                                                             |
+|                                   | If the primary list fails to find any items then this secondary list is used as the primary                     |
+|                                   |                                                                                                                 |
+|                                   | This is useful When the container is hosted external to the actual program source                               |
+|                                   | example if org.opencontainers.image.source is `https://github.com/linuxserver/docker-sonarr`                    |
+|                                   | you can also provide docker.versions.source as`https://github.com/Sonarr/Sonarr`                                |
+|                                   | it will do its best to match up a secondary change with a primary change                                        |
+|                                   |                                                                                                                 |
+|                                   | You can provide this as csv to add additional sources  (Experimental)                                           |
+|                                   |                                                                                                                 |
+| docker.versions.sourceType        | Same as docker.versions.imageSourceType                                                                         |
+|                                   | but applies to docker.versions.source                                                                           |
+|                                   | This also works in the same way and is expected to be provided as csv lining up to the source its applicable to |
+|                                   |                                                                                                                 |
+| docker.versions.tagIgnorePrefixes | csv of terms used exclude certain releases                                                                      |
+|                                   | i.e if you provide `apple,banana` if either of these are found in the title of the release it will not be shown |
 
 If a container is missing opencontainers labels suggest to the maintainer to add them
 an easy way to implement the labels is via this [github action](https://github.com/docker/metadata-action)
@@ -110,14 +110,3 @@ below are a few examples of what can happen
 
 * when duplicated changelogs are detected
 ![Duplicated releases](images/duplicated.png)
-
-<!-- TODO: -->
-Add label to force primary to use a certain source i.e docker.versions.sourceType
-add one for secondary too
-if set will only look at type for changes
-will save from having to hit all locations OR avoid using one when they are no lnger used
-i.e maybe an app once used releases but now tags are more accurate
-values below are what is expected
-public const ALLOWED_TYPES = ['release', 'tag', 'changelog', 'commit'];
-
-If we were to filter by date after each check it might avoid the issue where no release get found for the first found type
