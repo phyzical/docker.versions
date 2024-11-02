@@ -15,6 +15,7 @@ use DockerVersions\Helpers\Publish;
 class Releases
 {
     public string $repositorySource;
+    public string $sourceType;
     public string $releasesUrl;
     const perPage = "100";
 
@@ -23,12 +24,16 @@ class Releases
     /**
      * Releases constructor.
      * @param Container $container
+     * @param string $repositorySource
+     * @param string $sourceType
      */
     public function __construct(
         Container $container,
-        string $repositorySource
+        string $repositorySource,
+        string $sourceType,
     ) {
         $this->container = $container;
+        $this->sourceType = $sourceType;
         $this->repositorySource = $repositorySource;
     }
 
@@ -225,16 +230,59 @@ class Releases
     /**
      * Handle the fallback releases.
      */
-    function pullFallbackReleases(): void
+    function pullAllReleases(): void
     {
+        if (!empty($this->sourceType)) {
+            $this->actionSourceType();
+            return;
+        }
         // if source is an md file
         if ($this->isChangelogUrl()) {
-            Publish::message("<li class='warnings'>Falling back to changelog for information for $this->repositorySource</li>");
             $this->parseChangelogFile();
-        } else {
-            Publish::message("<li class='warnings'>Falling back to last 30 tags for information for $this->repositorySource</li>");
+        }
+        if (!$this->hasReleases()) {
+            $this->pullReleases();
+        }
+        if (!$this->hasReleases()) {
             $this->pullTags();
         }
+        if (!$this->hasReleases()) {
+            $this->pullCommits();
+        }
+    }
+    /**
+     * Handle the source type.
+     */
+    function actionSourceType(): void
+    {
+        switch ($this->sourceType) {
+            case "changelog":
+                $this->parseChangelogFile();
+                break;
+            case "releases":
+                $this->pullReleases();
+                break;
+            case "tags":
+                $this->pullTags();
+                break;
+            case "commits":
+                $this->pullCommits();
+                break;
+            case "disabled":
+                Publish::loadingMessage($this->repositorySource . "is disabled, skipping");
+                break;
+            default:
+                Publish::message("<li class='warnings'>Unknown source type: $this->sourceType, please provide one of the following '" . implode("', '", Release::ALLOWED_TYPES) . "'</li>");
+        }
+    }
+
+    /**
+     * Check if the source is disabled.
+     * @return bool
+     */
+    function isDisabled(): bool
+    {
+        return $this->sourceType == "disabled";
     }
 
     /**
