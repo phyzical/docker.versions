@@ -12,6 +12,12 @@
 
 <PLUGIN name="&name;" author="&author;" version="&version;" launch="&launch;" pluginURL="&pluginURL;" min="6.12.3">
     <CHANGES>
+###2024.11.02
+- Changed all summaries to be open by default
+- Reworked readme
+- Added a new fallback of commit messages, falls back if no tags are found or is enforced via sourceType
+- Added new labels sourceType and imageSourceType, these are used enforce only parsing as a specific type instead of checking one by one
+- This can be useful to avoid extra api calls or enforce a specific type, i.e you might only care about commit message logs and tags takes too long.
 ###2024.10.31
 - Fix text wrapping so you dont need to scroll to the right to see long changelogs
 ###2024.10.02
