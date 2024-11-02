@@ -23,10 +23,10 @@ let changeLog_nchan
 function showChangeLog(container) {
     var title = _('Changelog for ') + container;
     var url = '/plugins/docker.versions/server/GetChangelog.php?cts[]=' + encodeURIComponent(container);
-    popup(title, url);
+    popup(title, container, url);
 }
 
-function popup(title, url) {
+function popup(title, container, url) {
     $('#iframe-popup').html('<iframe id="myIframe" frameborder="0" scrolling="yes" width="100%" height="99%"></iframe>');
 
     if (!changeLog_nchan) {
@@ -67,6 +67,15 @@ function popup(title, url) {
         close: function (event, ui) {
             changeLog_nchan.stop();
             // location = window.location.href;
+        },
+        buttons: {
+            "Apply Update": function () {
+                $(this).dialog('close');
+                updateContainer(container);
+            },
+            "Cancel": function () {
+                $(this).dialog('close');
+            }
         }
     });
     setTimeout(function () {
