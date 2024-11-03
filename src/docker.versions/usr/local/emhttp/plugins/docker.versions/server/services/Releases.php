@@ -269,7 +269,7 @@ class Releases
                 $this->pullCommits();
                 break;
             case "disabled":
-                Publish::loadingMessage($this->repositorySource . "is disabled, skipping");
+                Publish::loadingMessage($this->repositorySource . " is disabled, skipping");
                 break;
             default:
                 Publish::message("<li class='warnings'>Unknown source type: $this->sourceType, please provide one of the following '" . implode("', '", Release::ALLOWED_TYPES) . "'</li>");
@@ -290,24 +290,34 @@ class Releases
      */
     function parseChangelogFile(): void
     {
-        //replace github.com with raw.githubusercontent.com and replace blob with refs/heads
-        $releasesUrl = str_replace(
-            ["github.com", "blob"],
-            ["raw.githubusercontent.com", "refs/heads"],
-            $this->repositorySource
-        );
+        $releasesUrl = $this->repositorySource;
+
+        if ($this->container->isGithubRepository()) {
+            //replace github.com with raw.githubusercontent.com and replace blob with refs/heads
+            $releasesUrl = str_replace(
+                ["github.com", "blob"],
+                ["raw.githubusercontent.com", "refs/heads"],
+                $releasesUrl
+            );
+        }
 
         $this->releasesUrl = $releasesUrl;
         $changelogString = $this->makeReq($releasesUrl);
+        var_dump($changelogString);
+
         $changelogLines = explode("\n", $changelogString);
 
+
         // split into chunks by lines that contain 1 to many # and a date string
-        // (\d{4}[-\/]\d{2}[-\/]\d{2}): Matches YYYY-MM-DD or YYYY/MM/DD.
-        // (\d{2}[-\/]\d{2}[-\/]\d{4}): Matches MM-DD-YYYY or MM/DD/YYYY.
-        // (\d{4}[-\/]\d{1,2}[-\/]\d{1,2}): Matches YYYY-M-D or YYYY/M/D.
-        // (\d{1,2}[-\/]\d{1,2}[-\/]\d{4}): Matches D-M-YYYY or D/M/YYYY.
-        // ([A-Za-z]{3} [A-Za-z]{3} \d{1,2}(st|nd|rd|th)?,? \d{4}):  Matches Mon Jan 15th 2024 or similar.
-        $dateRegex = "/(\d{4}[-\/]\d{2}[-\/]\d{2})|(\d{2}[-\/]\d{2}[-\/]\d{4})|(\d{4}[-\/]\d{1,2}[-\/]\d{1,2})|(\d{1,2}[-\/]\d{1,2}[-\/]\d{4})|([A-Za-z]{3} [A-Za-z]{3} \d{1,2}(st|nd|rd|th)?,? \d{4})/";
+        $dateRegexParts = [
+            "(\d{4}[-\/]\d{2}[-\/]\d{2})", //Matches YYYY-MM-DD or YYYY/MM/DD.
+            "(\d{2}[-\/]\d{2}[-\/]\d{4})", //Matches MM-DD-YYYY or MM/DD/YYYY.
+            "(\d{4}[-\/]\d{1,2}[-\/]\d{1,2})", //Matches YYYY-M-D or YYYY/M/D.
+            "(\d{1,2}[-\/]\d{1,2}[-\/]\d{4})", //Matches D-M-YYYY or D/M/YYYY.
+            "([A-Za-z]{3} [A-Za-z]* \d{1,2}(st|nd|rd|th)?,? \d{4})", //Matches Mon MONTH 15th 2024 or similar.
+            "(\d{1,2}(st|nd|rd|th)?,? [A-Za-z]* \d{4})" //Matches 15th MONTH 2024 or similar.
+        ];
+        $dateRegex = "/" . implode("|", $dateRegexParts) . "/";
 
         // for each line matching the date regex get the following line until the next date regex
         $groupedChangeLogs = [];
@@ -371,6 +381,11 @@ class Releases
      */
     function pullReleases(): void
     {
+        if (!$this->container->isGithubRepository()) {
+            Publish::message("<h3>Error only github repositories are supported for releases at this time!</h3>");
+            return;
+        }
+
         $releasesUrl = $this->githubURL() . "/releases?per_page=" . self::perPage;
         $this->releasesUrl = $releasesUrl;
 
@@ -406,6 +421,11 @@ class Releases
      */
     function pullTags(): void
     {
+        if (!$this->container->isGithubRepository()) {
+            Publish::message("<h3>Error only github repositories are supported for releases at this time!</h3>");
+            return;
+        }
+
         $url = $this->githubURL() . "/tags?per_page=" . self::perPage;
         $this->releasesUrl = $url;
         $tags = $this->makeReq($url);
@@ -444,6 +464,11 @@ class Releases
      */
     function pullCommits(): void
     {
+        if (!$this->container->isGithubRepository()) {
+            Publish::message("<h3>Error only github repositories are supported for releases at this time!</h3>");
+            return;
+        }
+
         $url = $this->githubURL() . "/commits?per_page=" . self::perPage;
         $this->releasesUrl = $url;
         $commits = $this->makeReq($url);
