@@ -303,7 +303,6 @@ class Releases
 
         $this->releasesUrl = $releasesUrl;
         $changelogString = $this->makeReq($releasesUrl);
-        var_dump($changelogString);
 
         $changelogLines = explode("\n", $changelogString);
 
