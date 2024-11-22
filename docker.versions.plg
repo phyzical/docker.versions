@@ -12,6 +12,10 @@
 
 <PLUGIN name="&name;" author="&author;" version="&version;" launch="&launch;" pluginURL="&pluginURL;" min="6.12.3">
     <CHANGES>
+###2024.11.22
+- Added some additional file exists checks to avoid warnings
+- Added logic to be able to view the saved token, and also save it as an empty value for no token
+
 ###2024.11.03
 - Fix an invalid reference to sourceType context
 - Support changelogs urls that are not hosted on github
