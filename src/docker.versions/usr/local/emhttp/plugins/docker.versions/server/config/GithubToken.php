@@ -4,7 +4,8 @@ namespace DockerVersions\Config;
 
 class GithubToken
 {
-    public const CONFIG_PATH = "/boot/config/docker.versions/";
+    public const CONFIG_PATH = "/boot/config/docker.versions";
+    public const TOKEN_PATH = GithubToken::CONFIG_PATH . "/github_token.txt";
 
     /**
      * Save the GitHub token to a file.
@@ -13,16 +14,11 @@ class GithubToken
     static function formSubmit(): string|null
     {
         if ($_SERVER["REQUEST_METHOD"] == "POST") {
-            // Get the GitHub token from the form input
             $githubToken = trim($_POST["github_token"]);
-            // Validate the token (basic validation)
             if (!empty($githubToken)) {
-                // Save the token to a file (you can change this to save to a database if needed)
                 mkdir(GithubToken::CONFIG_PATH, 0755, true);
-                file_put_contents(GithubToken::CONFIG_PATH . "/github_token.txt", $githubToken);
-                return "GitHub token saved successfully! (" . $githubToken . ")";
-            } else {
-                return "Please enter a valid GitHub token.";
+                file_put_contents(GithubToken::TOKEN_PATH, $githubToken);
+                return "GitHub token saved successfully!";
             }
         }
         return null;
@@ -34,7 +30,10 @@ class GithubToken
      */
     static function getGithubToken(): string
     {
-        return file_get_contents(self::CONFIG_PATH . "/github_token.txt");
+        if (file_exists(self::TOKEN_PATH)) {
+            return file_get_contents(self::TOKEN_PATH);
+        }
+        return "";
     }
 
     static function generateForm(): void
@@ -49,9 +48,22 @@ class GithubToken
                 <div>
                     <form method="post" action="">
                         <label for="github_token">GitHub Token:</label>
-                        <input type="text" id="github_token" name="github_token" required>
+            HTML;
+        echo '<input type="password" id="github_token" name="github_token" value="' . self::getGithubToken() . '">';
+        echo <<<HTML
+                        <input type="checkbox" id="show_password" onclick="togglePassword()"> Show Token
                         <button type="submit">Save Token</button>
                     </form>
+                    <script>
+                        function togglePassword() {
+                            var x = document.getElementById("github_token");
+                            if (x.type === "password") {
+                                x.type = "text";
+                            } else {
+                                x.type = "password";
+                            }
+                        }
+                    </script>
             HTML;
         // Display the message if set
         if (isset($message)) {
