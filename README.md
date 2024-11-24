@@ -42,7 +42,7 @@ Below is a list of working examples, sometimes it will just work out of the box,
 | prom/influxdb-exporter  | <https://github.com/prometheus/influxdb_exporter>                                     | -                               | -                                 |
 | linuxserver/nextcloud   | <https://github.com/nextcloud/docker,https://github.com/nextcloud/server>             | -                               | -                                 |
 | linuxserver/jellyfin    | <https://github.com/jellyfin/jellyfin>                                                | -                               | -                                 |
-| vikunja/vikunja:latest  | <https://raw.githubusercontent.com/go-vikunja/vikunja/refs/heads/main/CHANGELOG.md>   | -                               | -                                 |
+| vikunja/vikunja         | <https://raw.githubusercontent.com/go-vikunja/vikunja/refs/heads/main/CHANGELOG.md>   | -                               | -                                 |
 | jellyfin/jellyfin-vue   | -                                                                                     | commits                         | -                                 |
 | mccloud/subgen          | <https://github.com/McCloudS/subgen>                                                  | -                               | -                                 |
 | linuxserver/qbittorrent | <https://github.com/qbittorrent/qBittorrent/blob/master/Changelog>                    | -                               | libtorrentv                       |
