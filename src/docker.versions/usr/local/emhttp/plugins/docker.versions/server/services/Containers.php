@@ -27,6 +27,7 @@ class Containers
         $dockerClient = new DockerClient();
 
         // Publish::message(json_encode($dockerClient->getDockerJSON("/containers/json?all=1")));
+        // exit;
 
         $containers = array_filter($dockerClient->getDockerJSON("/containers/json?all=1"), function ($ct) use ($containers) {
             return in_array(str_replace("/", "", $ct['Names'][0]), $containers) && $ct['Labels'][Container::$LABELS["unraidManaged"]];

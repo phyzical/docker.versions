@@ -29,6 +29,29 @@ When a container image is checked for release changes the following steps of thi
   * If the org.opencontainers.image.created is not found it will then attempt to subset to the last 6 months of releases
   * If nothing then it will fallback to displaying everything
 
+## Working Example References
+
+Below is a list of working examples, sometimes it will just work out of the box, but adding additional contexts can improve whats shown
+
+| Image Name              | docker.versions.source                                                                | docker.versions.imageSourceType | docker.versions.tagIgnorePrefixes |
+| ----------------------- | ------------------------------------------------------------------------------------- | ------------------------------- | --------------------------------- |
+| haveagitgat/tdarr       | <https://tdarr.YOUR_SERVER/changelog.md>                                              | disabled                        | -                                 |
+|                         | This one requires extra work as the changelog is sourced from the running application | -                               | -                                 |
+| ekofr/pihole-exporter   | <https://github.com/eko/pihole-exporter>                                              | -                               | -                                 |
+| prom/prometheus         | <https://github.com/prometheus/prometheus>                                            | -                               | -                                 |
+| prom/influxdb-exporter  | <https://github.com/prometheus/influxdb_exporter>                                     | -                               | -                                 |
+| linuxserver/nextcloud   | <https://github.com/nextcloud/docker,https://github.com/nextcloud/server>             | -                               | -                                 |
+| linuxserver/jellyfin    | <https://github.com/jellyfin/jellyfin>                                                | -                               | -                                 |
+| vikunja/vikunja:latest  | <https://raw.githubusercontent.com/go-vikunja/vikunja/refs/heads/main/CHANGELOG.md>   | -                               | -                                 |
+| jellyfin/jellyfin-vue   | -                                                                                     | commits                         | -                                 |
+| mccloud/subgen          | <https://github.com/McCloudS/subgen>                                                  | -                               | -                                 |
+| linuxserver/qbittorrent | <https://github.com/qbittorrent/qBittorrent/blob/master/Changelog>                    | -                               | libtorrentv                       |
+| linuxserver/prowlarr    | <https://github.com/Prowlarr/Prowlarr>                                                | -                               | -                                 |
+| linuxserver/lidarr      | <https://github.com/Lidarr/Lidarr>                                                    | -                               | -                                 |
+| linuxserver/readarr     | <https://github.com/Readarr/Readarr>                                                  | -                               | -                                 |
+| linuxserver/sonarr      | <https://github.com/Sonarr/Sonarr>                                                    | -                               | -                                 |
+| linuxserver/radarr      | <https://github.com/Radarr/Radarr>                                                    | -                               | -                                 |
+
 ## Container Labels
 
 For the best experience images try to add following labels;
