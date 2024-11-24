@@ -14,7 +14,9 @@ try {
     Publish::message("<h3 style='display: none' class='loading'></h3>");
     Containers::getChangeLogs($_GET["cts"]);
 } catch (Exception $e) {
-    Publish::message("<h3>Error: {$e->getMessage()}</h3>");
+    $errorMessage = "<h3>Error: {$e->getMessage()}</h3>";
+    $stackTrace = "<pre>{$e->getTraceAsString()}</pre>";
+    Publish::message($errorMessage . $stackTrace);
 }
 
 ?>

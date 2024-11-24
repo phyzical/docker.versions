@@ -309,12 +309,12 @@ class Releases
 
         // split into chunks by lines that contain 1 to many # and a date string
         $dateRegexParts = [
-            "(\d{4}[-\/]\d{2}[-\/]\d{2})", //Matches YYYY-MM-DD or YYYY/MM/DD.
-            "(\d{2}[-\/]\d{2}[-\/]\d{4})", //Matches MM-DD-YYYY or MM/DD/YYYY.
-            "(\d{4}[-\/]\d{1,2}[-\/]\d{1,2})", //Matches YYYY-M-D or YYYY/M/D.
-            "(\d{1,2}[-\/]\d{1,2}[-\/]\d{4})", //Matches D-M-YYYY or D/M/YYYY.
-            "([A-Za-z]{3} [A-Za-z]* \d{1,2}(st|nd|rd|th)?,? \d{4})", //Matches Mon MONTH 15th 2024 or similar.
-            "(\d{1,2}(st|nd|rd|th)?,? [A-Za-z]* \d{4})" //Matches 15th MONTH 2024 or similar.
+            "(\d{4}[-\/]\d{2}[-\/]\d{2}(?!\d))", // Matches YYYY-MM-DD or YYYY/MM/DD.
+            "(\d{2}[-\/]\d{2}[-\/]\d{4}(?!\d))", // Matches MM-DD-YYYY or MM/DD/YYYY.
+            "(\d{4}[-\/]\d{1,2}[-\/]\d{1,2}(?!\d))", // Matches YYYY-M-D or YYYY/M/D.
+            "(\d{1,2}[-\/]\d{1,2}[-\/]\d{4}(?!\d))", // Matches D-M-YYYY or D/M/YYYY.
+            "([A-Za-z]{3} [A-Za-z]* \d{1,2}(st|nd|rd|th)?,? \d{4}(?!\d))", // Matches Mon MONTH 15th 2024 or similar.
+            "(\d{1,2}(st|nd|rd|th)?,? [A-Za-z]* \d{4}(?!\d))" // Matches 15th MONTH 2024 or similar. (tdarr)
         ];
         $dateRegex = "/" . implode("|", $dateRegexParts) . "/";
 
