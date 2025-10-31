@@ -7,4 +7,6 @@ Icon="server"
     $documentRoot = $_SERVER['DOCUMENT_ROOT'] ?? '/usr/local/emhttp';
 ?>
 
+<link type="text/css" rel="stylesheet" href="<?autov("/plugins/docker.versions/styles/styles.css")?>">
+
 <script defer src="<?autov('/plugins/docker.versions/scripts/changelog.js')?>"></script>

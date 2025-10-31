@@ -1,0 +1,12 @@
+.sweet-alert.change-log-summary {
+    width: 75% !important;
+    max-width: 75%;
+}
+
+.change-log-iframe-container {
+    height: 80%;
+}
+
+#myIframe {
+    height: 75vh;
+}

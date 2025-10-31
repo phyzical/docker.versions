@@ -6,12 +6,15 @@
 <!ENTITY launch "Settings/docker.versions">
 <!ENTITY plugdir "/usr/local/emhttp/plugins/&name;">
 <!ENTITY pluginURL "https://raw.githubusercontent.com/&github;/main/&name;.plg">
-<!ENTITY version "2024.11.24">
-<!ENTITY md5 "5b46b2a5f943f5611f64f9b1ba7cec00">
+<!ENTITY version "2025.10.31">
+<!ENTITY md5 "473e371e60d1972868c4c967aa179a8a">
 ]>
 
-<PLUGIN name="&name;" author="&author;" version="&version;" launch="&launch;" pluginURL="&pluginURL;" min="6.12.3">
+<PLUGIN name="&name;" author="&author;" version="&version;" launch="&launch;" pluginURL="&pluginURL;" min="7.2.0">
     <CHANGES>
+###2025.10.31
+- Fixed styling to support 7.2.0 ui changes
+
 ###2024.11.24
 - Adjusted the changelog parser to avoid false positive matches
 

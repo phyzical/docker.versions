@@ -27,7 +27,6 @@ function showChangeLog(container) {
 }
 
 function popup(title, container, url) {
-    $('#iframe-popup').html('<iframe id="myIframe" frameborder="0" scrolling="yes" width="100%" height="99%"></iframe>');
 
     if (!changeLog_nchan) {
         changeLog_nchan = new NchanSubscriber('/sub/changelog');
@@ -45,44 +44,35 @@ function popup(title, container, url) {
             } else {
                 const box = $(iframeDocument).find('body')
                 box.css('background-color', 'white')
-                box.append(data)//.scrollTop(box[0].scrollHeight);
+                box.append(data)
             }
         });
     }
     changeLog_nchan.start();
 
-    $('#iframe-popup').dialog({
-        autoOpen: true,
+
+    swal({
         title,
-        draggable: true,
-        width: Math.min(Math.max(window.innerWidth / 2, 900), 1600),
-        height: Math.max(window.innerHeight * 3 / 5, 600),
-        resizable: true,
-        modal: true,
-        show: { effect: 'fade', duration: 250 },
-        hide: { effect: 'fade', duration: 250 },
-        open: function (ev, ui) {
-            $.get(url, {}, function (data) { });
-        },
-        close: function (event, ui) {
-            changeLog_nchan.stop();
-            // location = window.location.href;
-        },
-        buttons: {
-            "Apply Update": function () {
-                $(this).dialog('close');
+        text: '<iframe id="myIframe" frameborder="0" scrolling="yes" width="100%" height="99%"></iframe>',
+        html: true,
+        closeOnConfirm: true,
+        showCancelButton: true,
+        allowOutsideClick: true,
+    }, function (isApproved) {
+        $(".sweet-alert").removeClass("change-log-summary");
+        swal.close(); // Close the SweetAlert dialog
+        if (isApproved) {
+            $('div.spinner.fixed').show();
+            setTimeout(() => {
+                $('div.spinner.fixed').hide();
                 updateContainer(container);
-            },
-            "Cancel": function () {
-                $(this).dialog('close');
-            }
+            }, 500);
         }
+        changeLog_nchan.stop()
     });
-    setTimeout(function () {
-        $(".ui-dialog").css({ 'width': '90%', 'left': '5%' });
-    }, 300);
-    $(".ui-dialog .ui-dialog-titlebar").addClass('menu');
-    $('.ui-dialog .ui-dialog-titlebar-close').text('X').prop('title', _('Close'));
-    $(".ui-dialog .ui-dialog-title").css({ 'text-align': 'center', 'width': '100%' });
-    $(".ui-dialog .ui-dialog-content").css({ 'padding-top': '15px', 'vertical-align': 'bottom' });
+
+    $(".sweet-alert").addClass("change-log-summary");
+    $('#myIframe').parent().addClass("change-log-iframe-container");
+
+    $.get(url, {}, function (data) { });
 }
