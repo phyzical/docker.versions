@@ -313,8 +313,8 @@ class Releases
             "(\d{2}[-\/]\d{2}[-\/]\d{4}(?!\d))", // Matches MM-DD-YYYY or MM/DD/YYYY.
             "(\d{4}[-\/]\d{1,2}[-\/]\d{1,2}(?!\d))", // Matches YYYY-M-D or YYYY/M/D.
             "(\d{1,2}[-\/]\d{1,2}[-\/]\d{4}(?!\d))", // Matches D-M-YYYY or D/M/YYYY.
-            "([A-Za-z]{3} [A-Za-z]* \d{1,2}(st|nd|rd|th)?,? \d{4}(?!\d))", // Matches Mon MONTH 15th 2024 or similar.
-            "(\d{1,2}(st|nd|rd|th)?,? [A-Za-z]* \d{4}(?!\d))" // Matches 15th MONTH 2024 or similar. (tdarr)
+            "([A-Za-z]{3} [A-Za-z]{3,9} (0?[1-9]|[12]\\d|3[01])(st|nd|rd|th)?,? \d{4}(?!\d))", // Matches Mon MONTH 15th 2024 or similar.
+            "((0?[1-9]|[12]\\d|3[01])(st|nd|rd|th)?,? [A-Za-z]{3,9} \d{4}(?!\d))" // Matches 15th MONTH 2024 or similar. (tdarr)
         ];
         $dateRegex = "/" . implode("|", $dateRegexParts) . "/";
 

@@ -12,6 +12,9 @@
 
 <PLUGIN name="&name;" author="&author;" version="&version;" launch="&launch;" pluginURL="&pluginURL;" min="7.2.0">
     <CHANGES>
+###2026.03.06
+- Adjusted date regex to be more strict to avoid false positives on date parsing for text changelogs
+
 ###2025.10.31
 - Fixed styling to support 7.2.0 ui changes
 
